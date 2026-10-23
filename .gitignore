@@ -1,0 +1,19 @@
+# Dados extraídos do banco (não versionar)
+dados_brutos/
+*.zip
+*.parquet
+*.csv
+*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+
+# Configuração local (IP, banco, caminhos)
+config.py
