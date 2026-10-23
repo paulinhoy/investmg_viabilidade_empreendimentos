@@ -1,59 +1,58 @@
-import pandas as pd 
-import numpy as np
-from sqlalchemy import create_engine
-import getpass
-from numpy_financial import irr, mirr, npv
+import os
 
-from queries import QUERIES
-from config import DB_HOST, DB_PORT, DB_NAME, CAMINHO_EXCEL_EMP_100
+import pandas as pd
+import numpy as np
+from numpy_financial import irr, mirr, npv
 
 # ==========================================
 # 1. PARÂMETROS E CONFIGURAÇÕES FIXAS
 # ==========================================
-TAXA_FINANCIAMENTO = 0.1102   
-TAXA_REINVESTIMENTO = 0.15    
+TAXA_FINANCIAMENTO = 0.1102
+TAXA_REINVESTIMENTO = 0.15
 TAXA_DESCONTO = 0.1102
+
+PASTA_DADOS = "dados_brutos"   # pasta extraída do dados_brutos.zip (gerado por baixar_dados.py)
+PASTA_SAIDA = "saida"
+CAMINHO_EXCEL_EMP_100 = os.path.join(PASTA_DADOS, "modelagem_financeira_ferroviario_passageiros.xlsx")
+APLICAR_CORRECAO_EMP_100 = False   # desativada por enquanto (ver OBSERVACOES_DADOS.md)
 
 # ==========================================
 # 2. FUNÇÕES DO PIPELINE
 # ==========================================
 
-def conectar_banco():
-    """Solicita credenciais e retorna a engine conectada ao banco."""
-    user = input("Digite o usuário do banco: ")
-    password = getpass.getpass("Digite a senha do banco: ")
+def ler_tabela(nome):
+    """Lê uma tabela baixada por baixar_dados.py (parquet ou, na falta dele, CSV)."""
+    caminho_parquet = os.path.join(PASTA_DADOS, f"{nome}.parquet")
+    if os.path.exists(caminho_parquet):
+        return pd.read_parquet(caminho_parquet)
+    return pd.read_csv(os.path.join(PASTA_DADOS, f"{nome}.csv"))
 
-    engine = create_engine(f"postgresql+psycopg2://{user}:{password}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
-
-    with engine.connect() as conn:
-        print("Conexão com o banco realizada com sucesso.")
-
-    return engine
-
-def extrair_dados(engine):
-    """Executa as queries e retorna um dicionário de DataFrames."""
-    print("Extraindo dados do banco...")
+def carregar_dados():
+    """Lê os arquivos locais e retorna um dicionário de DataFrames."""
+    print(f"Lendo dados locais de '{PASTA_DADOS}'...")
     return {
-        "df_receita": pd.read_sql(QUERIES["receita"], engine),
-        "df_custo": pd.read_sql(QUERIES["custo"], engine),
-        "df_emps_esperados": pd.read_sql(QUERIES["emps_esperados"], engine),
-        "tir_infra": pd.read_sql(QUERIES["tir_infra"], engine),
-        "df_emp": pd.read_sql(QUERIES["emp"], engine),
-        "df_cap_op": pd.read_sql(QUERIES["capex_opex"], engine),
-        "df_receita_infra": pd.read_sql(QUERIES["receita_infra"], engine),
-        "df_receita_codemge": pd.read_sql(QUERIES["receita_codemge"], engine)
+        "df_receita": ler_tabela("receita"),
+        "df_custo": ler_tabela("custo"),
+        "df_emps_esperados": ler_tabela("emps_esperados"),
+        "tir_infra": ler_tabela("tir_infra"),
+        "df_emp": ler_tabela("emp"),
+        "df_cap_op": ler_tabela("capex_opex"),
+        "df_receita_infra": ler_tabela("receita_infra"),
+        "df_receita_codemge": ler_tabela("receita_codemge"),
+        "df_ferroviario_passageiro": ler_tabela("ferroviario_passageiro"),
+        "df_light": ler_tabela("concessao_light"),
+        "df_aero_duto": ler_tabela("aero_duto")
     }
 
 def preparar_fluxo_caixa(df_receita, df_custo):
-    """Monta o fluxo de caixa abatendo os custos no primeiro ano do projeto."""
+    """Monta o fluxo de caixa abatendo os custos no primeiro ano do projeto.
+    Mantém o custo abatido (coluna 'custo') e o período 't' (0 = primeiro ano)."""
     df_final = pd.merge(df_receita, df_custo, on=['id_empreendimento', 'id_cenario'], how='left')
     primeiro_ano = df_final.groupby(['id_empreendimento', 'id_cenario'])['ano_corrente'].transform('min')
 
-    df_final['fluxo'] = np.where(
-        df_final['ano_corrente'] == primeiro_ano,
-        df_final['receita_ano'] - df_final['custo_final'],
-        df_final['receita_ano']
-    )
+    df_final['custo'] = np.where(df_final['ano_corrente'] == primeiro_ano, df_final['custo_final'], 0.0)
+    df_final['fluxo'] = df_final['receita_ano'] - df_final['custo']
+    df_final['t'] = (df_final['ano_corrente'] - primeiro_ano).astype(int)
     df_final = df_final.drop(columns=['custo_final'])
 
     linhas_com_nan = df_final['fluxo'].isna()
@@ -127,17 +126,13 @@ def consolidar_relatorio(df_resultados, dados):
     }, inplace=True)
 
     # Adicionando dados de ferroviarios de passageiro
-    df_ferroviario_passageiro = pd.read_sql(QUERIES['ferroviario_passageiro'],engine)
-    df_banco_receita = pd.concat([df_banco_receita, df_ferroviario_passageiro], ignore_index=True)
+    df_banco_receita = pd.concat([df_banco_receita, dados["df_ferroviario_passageiro"]], ignore_index=True)
 
-    # Adicionando dados de concessão light 
-    df_light = pd.read_sql(QUERIES['concessao_light'], engine)
-    df_banco_receita = pd.concat([df_banco_receita, df_light], ignore_index=True)
+    # Adicionando dados de concessão light
+    df_banco_receita = pd.concat([df_banco_receita, dados["df_light"]], ignore_index=True)
 
     # Adicionando dados de aeroportuario e dutoviario
-    df_aero_duto = pd.read_sql(QUERIES['aero_duto'],engine)
-
-    df_banco_receita = pd.concat([df_banco_receita, df_aero_duto], ignore_index=True)
+    df_banco_receita = pd.concat([df_banco_receita, dados["df_aero_duto"]], ignore_index=True)
 
 
     return df_banco_receita
@@ -307,50 +302,24 @@ def aplicar_correcao_empreendimento_100(dados):
 # 3. FUNÇÕES DE EXPORTAÇÃO (CARGA)
 # ==========================================
 
-def exportar_csv(df):
-    """Exporta o DataFrame para um arquivo CSV local."""
-    nome_arquivo = input("\nDigite o nome do arquivo (ex: resultado.csv): ").strip()
-
-    if not nome_arquivo.endswith('.csv'):
-        nome_arquivo += '.csv'
-
-    df.to_csv(nome_arquivo, index=False, sep=';', decimal=',')
-    print(f"Sucesso! Arquivo '{nome_arquivo}' salvo localmente.")
-
-def exportar_banco(df, engine):
-    """Exporta o DataFrame para o PostgreSQL."""
-    print("\n--- Exportação para o Banco de Dados ---")
-    schema = input("Digite o nome do schema (ex: financeiro): ").strip()
-    tabela = input("Digite o nome da tabela (ex: resumo_financeiro_att): ").strip()
-
-    print(f"\n⚠️ AVISO: Se a tabela '{schema}.{tabela}' já existir, ela será TOTALMENTE SUBSTITUÍDA.")
-    confirmacao = input("Deseja continuar com a exportação? (S/N): ").strip().upper()
-
-    if confirmacao == 'S':
-        print("Enviando dados para o banco. Isso pode levar alguns segundos...")
-        df.to_sql(
-            name=tabela,
-            con=engine,
-            schema=schema,
-            if_exists='append', 
-            index=False,         
-            chunksize=1000,      
-            method='multi'       
-        )
-        print("Sucesso! Dados inseridos no banco.")
-    else:
-        print("Exportação para o banco CANCELADA pelo usuário.")
+def exportar_tabela(df, nome):
+    """Salva em parquet (lido pelo cálculo da contraprestação) e em CSV (para Excel)."""
+    os.makedirs(PASTA_SAIDA, exist_ok=True)
+    caminho = os.path.join(PASTA_SAIDA, nome)
+    df.to_parquet(f"{caminho}.parquet", index=False)
+    df.to_csv(f"{caminho}.csv", index=False, sep=';', decimal=',')
+    print(f"Sucesso! '{caminho}.parquet' e '{caminho}.csv' salvos ({len(df)} linhas).")
 
 # ==========================================
 # 4. EXECUÇÃO PRINCIPAL
 # ==========================================
 if __name__ == "__main__":
-    # 1. Conectar e Extrair
-    engine = conectar_banco()
-    dados = extrair_dados(engine)
+    # 1. Ler dados locais
+    dados = carregar_dados()
 
     # 1.1 Aplicar correção para o empreendimento 100
-    dados = aplicar_correcao_empreendimento_100(dados)
+    if APLICAR_CORRECAO_EMP_100:
+        dados = aplicar_correcao_empreendimento_100(dados)
 
     # 2. Processar Fluxo de Caixa
     print("Processando fluxo de caixa e indicadores...")
@@ -364,28 +333,7 @@ if __name__ == "__main__":
 
     print("\n✅ Processamento concluído com sucesso!")
 
-    # 5. Menu interativo de Exportação
-    while True:
-        print("\nO que você deseja fazer com os dados processados?")
-        print("1 - Exportar para CSV")
-        print("2 - Salvar no Banco de Dados (PostgreSQL)")
-        print("3 - Fazer os dois (CSV e Banco)")
-        print("4 - Sair sem salvar")
-
-        opcao = input("Escolha uma opção (1/2/3/4): ").strip()
-
-        if opcao == '1':
-            exportar_csv(df_final)
-            break
-        elif opcao == '2':
-            exportar_banco(df_final, engine)
-            break
-        elif opcao == '3':
-            exportar_csv(df_final)
-            exportar_banco(df_final, engine)
-            break
-        elif opcao == '4':
-            print("Encerrando sem salvar os dados.")
-            break
-        else:
-            print("Opção inválida. Tente novamente.")
+    # 5. Exportar localmente
+    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'fluxo']
+    exportar_tabela(df_fluxo[colunas_fluxo], "fluxo_caixa")
+    exportar_tabela(df_final, "resultados")
