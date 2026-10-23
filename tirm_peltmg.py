@@ -34,10 +34,8 @@ def carregar_dados():
         "df_receita": ler_tabela("receita"),
         "df_custo": ler_tabela("custo"),
         "df_emps_esperados": ler_tabela("emps_esperados"),
-        "tir_infra": ler_tabela("tir_infra"),
         "df_emp": ler_tabela("emp"),
         "df_cap_op": ler_tabela("capex_opex"),
-        "df_receita_infra": ler_tabela("receita_infra"),
         "df_receita_codemge": ler_tabela("receita_codemge"),
         "df_ferroviario_passageiro": ler_tabela("ferroviario_passageiro"),
         "df_light": ler_tabela("concessao_light"),
@@ -72,68 +70,46 @@ def calcular_indicadores_financeiros(grupo):
 def consolidar_relatorio(df_resultados, dados):
     """Une resultados financeiros com dados cadastrais, capex/opex e receitas."""
     df_emps_esperados = dados["df_emps_esperados"]
-    tir_infra = dados["tir_infra"]
     df_emp = dados["df_emp"]
     df_cap_op = dados["df_cap_op"]
-    df_receita_infra = dados["df_receita_infra"]
     df_receita_codemge = dados["df_receita_codemge"]
 
     # Mesclar resultados básicos e TIR
     df_tabela = pd.merge(df_emps_esperados, df_resultados, on=['id_empreendimento', 'id_cenario'], how='left')
     df_tabela.rename(columns={'tirm': 'tirm_codemge'}, inplace=True)
 
-    df_tabela = pd.merge(df_tabela, tir_infra, on=['id_empreendimento', 'id_cenario'], how='left')
-    df_tabela.rename(columns={'tirm': 'tirm_infra'}, inplace=True)
-
-    # Cálculos percentuais e diferenças
+    # Cálculos percentuais
     df_tabela['tirm_codemge'] = df_tabela['tirm_codemge'] * 100
-    df_tabela['diff'] = (df_tabela['tirm_infra'] - df_tabela['tirm_codemge']).abs()
 
     # Mesclar com informações do empreendimento
     cols_base = [
         'id_empreendimento', 'id_cenario', 'nome_empreendimento', 'id_setor', 'setor', 
         'natureza_empreendimento', 'numero_obras', 'descr_status_empreendimento', 
         'esfera_acao', 'intervencao_principal', 'grupo_modelagem', 'data_inicio', 
-        'data_conclusao', 'vpl', 'tirm_infra', 'tirm_codemge', 'diff'
+        'data_conclusao', 'vpl', 'tirm_codemge'
     ]
     df_banco = pd.merge(df_tabela, df_emp, on='id_empreendimento', how='inner')[cols_base]
 
     # Arredondamentos e ordenação
-    df_banco[['tirm_infra', 'tirm_codemge', 'diff']] = df_banco[['tirm_infra', 'tirm_codemge', 'diff']].round(2)
+    df_banco['tirm_codemge'] = df_banco['tirm_codemge'].round(2)
     df_banco = df_banco.sort_values(by=['id_empreendimento', 'id_cenario'])
 
     # Mesclar Capex/Opex
     df_banco.drop(columns=['capex', 'opex'], errors='ignore', inplace=True)
     df_banco_final = pd.merge(df_banco, df_cap_op, how='left', on=['id_empreendimento', 'id_cenario'])
 
-    # Mesclar novas Receitas
-    df_banco_receita = pd.merge(df_banco_final, df_receita_infra, on=['id_empreendimento', 'id_cenario'], how='left')
-    df_banco_receita = pd.merge(df_banco_receita, df_receita_codemge, on=['id_empreendimento', 'id_cenario'], how='left')
+    # Mesclar Receitas
+    df_banco_receita = pd.merge(df_banco_final, df_receita_codemge, on=['id_empreendimento', 'id_cenario'], how='left')
 
     # Filtro final de colunas e renomeação
-    cols_finais = [
-        'id_empreendimento', 'id_cenario', 'nome_empreendimento', 'id_setor', 'setor', 
-        'natureza_empreendimento', 'numero_obras', 'descr_status_empreendimento', 
-        'esfera_acao', 'intervencao_principal', 'grupo_modelagem', 'data_inicio', 
-        'data_conclusao', 'vpl', 'tirm_infra', 'tirm_codemge', 'diff', 'capex', 'opex', 
-        'receita_global', 'receita_global_codemge'
-    ]
+    cols_finais = cols_base + ['capex', 'opex', 'receita_codemge']
+    df_banco_receita.rename(columns={'receita_global_codemge': 'receita_codemge'}, inplace=True)
     df_banco_receita = df_banco_receita[cols_finais].copy()
 
-    df_banco_receita.rename(columns={
-        'receita_global': 'receita_seinfra',
-        'receita_global_codemge': 'receita_codemge'
-    }, inplace=True)
-
-    # Adicionando dados de ferroviarios de passageiro
-    df_banco_receita = pd.concat([df_banco_receita, dados["df_ferroviario_passageiro"]], ignore_index=True)
-
-    # Adicionando dados de concessão light
-    df_banco_receita = pd.concat([df_banco_receita, dados["df_light"]], ignore_index=True)
-
-    # Adicionando dados de aeroportuario e dutoviario
-    df_banco_receita = pd.concat([df_banco_receita, dados["df_aero_duto"]], ignore_index=True)
-
+    # Adicionando dados de ferroviarios de passageiro, concessão light, aeroportuario e dutoviario
+    # (o filtro de colunas também descarta as colunas de infra de extrações antigas)
+    df_externos = [dados["df_ferroviario_passageiro"], dados["df_light"], dados["df_aero_duto"]]
+    df_banco_receita = pd.concat([df_banco_receita] + [df[cols_finais] for df in df_externos], ignore_index=True)
 
     return df_banco_receita
 

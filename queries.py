@@ -28,10 +28,6 @@ QUERIES = {
           AND NOT (ve.id_setor = 2 AND ve.id_nat_empreendimento = 1)
           AND ve.id_empreendimento NOT in (1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1993, 1995) -- light 
     """,
-    "tir_infra": """
-        SELECT id_empreendimento, id_cenario, tirm
-        FROM financeiro.resumo_financeiro
-    """,
     "emp": """
         SELECT * FROM carteira.vw_empreendimento
     """,
@@ -42,13 +38,6 @@ QUERIES = {
             SUM(CASE WHEN vf.id_custo_economico = 2 THEN vf.valor_adotado ELSE 0 END) AS opex
         FROM cenario_recomendado_2.vw_custo_economico vf
         GROUP BY vf.id_empreendimento, vf.id_cenario
-    """,
-    "receita_infra": """
-        SELECT * FROM financeiro.vw_e06a_receita_ferro
-        UNION ALL
-        SELECT * FROM financeiro.vw_e06b_receita_hidro
-        UNION ALL
-        SELECT * FROM financeiro.vw_e06d_receita_rodo;
     """,
     "receita_codemge": """
         SELECT id_empreendimento, id_cenario, SUM(receita_ano) as receita_global_codemge
@@ -79,12 +68,9 @@ QUERIES = {
   ve.data_inicio,
   ve.data_conclusao,
   NULL AS vpl,
-  NULL AS tirm_infra,
   dfe.tir*100 AS tirm_codemge,
-  NULL AS diff,
   dfe.capex,
   dfe.opex,
-  NULL AS receita_seinfra,
   dfe.receita AS receita_codemge
 FROM carteira.vw_empreendimento ve 
 LEFT JOIN financeiro.dados_externos_financeiros dfe ON ve.id_empreendimento = dfe.id_empreendimento 
@@ -106,12 +92,9 @@ WHERE ve.id_nat_empreendimento = 1 and ve.id_setor = 2 AND dfe.id_empreendimento
   ve.data_inicio,
   ve.data_conclusao,
   NULL AS vpl,
-  NULL AS tirm_infra,
   dfe.tir*100 AS tirm_codemge,
-  NULL AS diff,
   dfe.capex,
   dfe.opex,
-  NULL AS receita_seinfra,
   dfe.receita AS receita_codemge
 FROM carteira.vw_empreendimento ve 
 LEFT JOIN financeiro.dados_externos_financeiros dfe ON ve.id_empreendimento = dfe.id_empreendimento 
@@ -133,12 +116,9 @@ WHERE ve.id_setor in (5,6) AND dfe.id_empreendimento IS NOT NULL AND dfe.tir IS 
   ve.data_inicio,
   ve.data_conclusao,
   NULL AS vpl,
-  NULL AS tirm_infra,
   dfe.tir*100 AS tirm_codemge,
-  NULL AS diff,
   dfe.capex,
   dfe.opex,
-  NULL AS receita_seinfra,
   dfe.receita AS receita_codemge
 FROM carteira.vw_empreendimento ve 
 LEFT JOIN financeiro.dados_externos_financeiros dfe ON ve.id_empreendimento = dfe.id_empreendimento 

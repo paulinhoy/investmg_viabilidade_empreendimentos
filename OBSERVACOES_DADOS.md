@@ -16,13 +16,13 @@ Efeito quando a correção está ligada:
 Ou seja, hoje a correção não altera nada. Por isso está desligada em `tirm_peltmg.py`
 (`APLICAR_CORRECAO_EMP_100 = False`). A decisão sobre aplicá-la ao cenário 10 ficou para depois.
 
-## 2. Só existe o cenário 10
+## 2. Só existe o cenário 10 — ✅ resolvido (esperado)
 
-`receita`, `custo`, `capex_opex` e `emps_esperados` só têm `id_cenario = 10`.
-Já `tir_infra` e `receita_infra` só têm os cenários **1 a 4**, nunca o 10.
+`id_cenario = 10` é a **carteira recomendada do PELT-MG**, a única tratada neste trabalho.
 
-Consequência: nas 170 linhas do cenário 10 do relatório, as colunas **`tirm_infra`, `diff` e
-`receita_seinfra` ficam 100% vazias**: a comparação com a SEINFRA não está acontecendo.
+As tabelas da infra (`tir_infra`, `receita_infra`) só tinham os cenários 1 a 4, e as colunas
+`tirm_infra`, `diff` e `receita_seinfra` ficavam vazias. A comparação com a infra deixou de ser
+necessária e foi **removida** das queries e do relatório.
 
 ## 3. Empreendimentos com receita mas sem custo (37)
 
@@ -46,12 +46,13 @@ Também há séries que começam muito cedo: emp. **108 (1996)**, 842 (2007), 12
 104 e 1035 (2014).
 
 Como o custo é abatido inteiro no primeiro ano (t=0), séries curtas ou muito antigas distorcem
-VPL, TIRM e a contraprestação calculada.
+VPL, TIRM e a contraprestação calculada. Na contraprestação, intervalos que passam do fim da
+série não são calculados (ex.: `10-25` deixa de fora 721, 722, 788 e 789, com a coluna `observacao`).
 
 ## 5. Receitas negativas (3 linhas)
 
 Existem 3 registros com `receita_ano < 0` na tabela `receita`, todos do **emp. 839**
-(anos 2056 a 2058, entre -0,17 mi e -0,60 mi).
+(anos 2056 a 2058, entre -0,17 mi e -0,60 mi). **A investigar.**
 
 ## 6. Pontos sem problema (verificados)
 
