@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from numpy_financial import mirr, npv
 
-from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, PASTA_SAIDA, exportar_tabela, ler_tabela
+from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, INFLACAO_ANUAL, PASTA_SAIDA, exportar_tabela, ler_tabela
 
 # ==========================================
 # 1. PARÂMETROS E CONFIGURAÇÕES FIXAS
@@ -15,6 +15,9 @@ from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, 
 # Filtro geral da carteira: status 1 (Concepção) a 5 (Em contratação) e esfera estadual.
 STATUS_PERMITIDOS = range(1, 6)
 ESFERA_PERMITIDA = 'Estadual'
+# Dois resultados: moeda constante (receitas como vêm do banco) e fluxo corrigido pela inflação
+# (fluxo_corrigido, ver INFLACAO_ANUAL em tirm_peltmg.py). Nos dois, o aporte é um valor nominal constante.
+MODOS = {'constante': ('fluxo', 'vpl', ''), 'inflacao': ('fluxo_corrigido', 'vpl_corrigido', '_inflacao')}
 COLUNAS_CADASTRO = ['id_empreendimento', 'id_cenario', 'nome_empreendimento', 'setor']
 COLUNAS_SAIDA = COLUNAS_CADASTRO + [
     'anos', 'anos_concessao', 'ano_calendario_inicio', 'ano_calendario_fim',
@@ -82,13 +85,14 @@ def calcular_contraprestacao(fluxos, ano_inicio, ano_fim, taxa=TAXA_DESCONTO):
         'fluxos_novos': fluxos_novos
     }
 
-def contraprestacao_carteira(df_fluxo, df_resultados, intervalo, taxa=TAXA_DESCONTO):
-    """Calcula a contraprestação para todos os empreendimentos com VPL negativa."""
+def contraprestacao_carteira(df_fluxo, df_resultados, intervalo, taxa=TAXA_DESCONTO, modo='constante'):
+    """Calcula a contraprestação para todos os empreendimentos com VPL negativa no modo escolhido."""
     ano_inicio, ano_fim = interpretar_intervalo(intervalo)
     chaves = ['id_empreendimento', 'id_cenario']
+    coluna_fluxo, coluna_vpl, _ = MODOS[modo]
 
     df_resultados = filtrar_carteira(df_resultados)
-    df_negativos = df_resultados[df_resultados['vpl'] < 0][COLUNAS_CADASTRO]
+    df_negativos = df_resultados[df_resultados[coluna_vpl] < 0][COLUNAS_CADASTRO]
     df_fluxo = df_fluxo.merge(df_negativos[chaves], on=chaves).sort_values(chaves + ['t'])
 
     linhas = []
@@ -96,7 +100,7 @@ def contraprestacao_carteira(df_fluxo, df_resultados, intervalo, taxa=TAXA_DESCO
         linha = {'id_empreendimento': id_emp, 'id_cenario': id_cen,
                  'anos': f"{ano_inicio}-{ano_fim}", 'anos_concessao': len(grupo)}
         try:
-            res = calcular_contraprestacao(grupo['fluxo'].values, ano_inicio, ano_fim, taxa)
+            res = calcular_contraprestacao(grupo[coluna_fluxo].values, ano_inicio, ano_fim, taxa)
         except ValueError as erro:
             linha['observacao'] = str(erro)
             linhas.append(linha)
@@ -131,20 +135,22 @@ if __name__ == "__main__":
     df_fluxo = pd.read_parquet(os.path.join(PASTA_SAIDA, "fluxo_caixa.parquet"))
     df_resultados = pd.read_parquet(os.path.join(PASTA_SAIDA, "resultados.parquet"))
 
-    df = contraprestacao_carteira(df_fluxo, df_resultados, intervalo)
-    validos = df['contraprestacao_anual'].notna()
+    for modo, (_, _, sufixo) in MODOS.items():
+        df = contraprestacao_carteira(df_fluxo, df_resultados, intervalo, modo=modo)
+        validos = df['contraprestacao_anual'].notna()
 
-    print(f"\nContraprestação para os anos {ano_inicio}-{ano_fim} (taxa de desconto {TAXA_DESCONTO:.2%})")
-    print(f"Empreendimentos com VPL negativa: {len(df)} | calculados: {validos.sum()} | fora do intervalo: {(~validos).sum()}")
-    if validos.any():
-        print(f"Soma das contraprestações anuais: R$ {df.loc[validos, 'contraprestacao_anual'].sum():,.2f}")
-        print(f"Maior |VPL| após contraprestação: {df.loc[validos, 'vpl_novo'].abs().max():.6f}")
+        descricao = "moeda constante" if modo == 'constante' else f"com inflação de {INFLACAO_ANUAL:.2%} a.a."
+        print(f"\nContraprestação para os anos {ano_inicio}-{ano_fim} (taxa de desconto {TAXA_DESCONTO:.2%}, {descricao})")
+        print(f"Empreendimentos com VPL negativa: {len(df)} | calculados: {validos.sum()} | fora do intervalo: {(~validos).sum()}")
+        if validos.any():
+            print(f"Soma das contraprestações anuais: R$ {df.loc[validos, 'contraprestacao_anual'].sum():,.2f}")
+            print(f"Maior |VPL| após contraprestação: {df.loc[validos, 'vpl_novo'].abs().max():.6f}")
 
-    if args.emp is not None:
-        linha = df[df['id_empreendimento'] == args.emp]
-        if linha.empty:
-            print(f"\nEmpreendimento {args.emp} não está entre os de VPL negativa.")
-        else:
-            print(f"\n{linha.T.to_string()}")
+        if args.emp is not None:
+            linha = df[df['id_empreendimento'] == args.emp]
+            if linha.empty:
+                print(f"\nEmpreendimento {args.emp} não está entre os de VPL negativa.")
+            else:
+                print(f"\n{linha.T.to_string()}")
 
-    exportar_tabela(df, f"contraprestacao_{ano_inicio}-{ano_fim}")
+        exportar_tabela(df, f"contraprestacao_{ano_inicio}-{ano_fim}{sufixo}")

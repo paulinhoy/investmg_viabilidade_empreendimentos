@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, PASTA_DADOS, PASTA_SAIDA
+from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, INFLACAO_ANUAL, PASTA_DADOS, PASTA_SAIDA
 from contraprestacao import filtrar_carteira
 
 # ==========================================
@@ -56,6 +56,7 @@ def montar_dados():
             'taxa_desconto': TAXA_DESCONTO,
             'taxa_financiamento': TAXA_FINANCIAMENTO,
             'taxa_reinvestimento': TAXA_REINVESTIMENTO,
+            'inflacao_anual': INFLACAO_ANUAL,
             'data_extracao': data_extracao,
             'gerado_em': datetime.now().isoformat(timespec="seconds")
         },

@@ -71,3 +71,13 @@ Existem 3 registros com `receita_ano < 0` na tabela `receita`, todos do **emp. 8
 `contraprestacao.filtrar_carteira` mantém só **status 1 a 5** (Concepção, Estudo, Projeto,
 Análise prévia, Em contratação; código vindo de `emp.status_empreendimento`) e **esfera estadual**.
 Sobram **84 empreendimentos com VPL**, dos quais **83 com VPL negativa**, todos do setor **rodoviário**.
+
+## 9. Receitas sem inflação: dois resultados
+
+As receitas do banco estão em **moeda constante** (sem inflação). Por isso há dois resultados:
+- **Moeda constante**: `fluxo`, `vpl`, `tirm_codemge` (como antes).
+- **Com inflação**: `fluxo_corrigido = fluxo × (1 + INFLACAO_ANUAL)^t`, `vpl_corrigido`, `tirm_codemge_corrigido`.
+  `INFLACAO_ANUAL = 3%` em `tirm_peltmg.py` (premissa, a confirmar). O ano 1 (t=0) não muda.
+
+A contraprestação gera `contraprestacao_<a>-<b>` e `contraprestacao_<a>-<b>_inflacao`. Nos dois, o aporte é um valor
+nominal constante descontado a 11,02%.

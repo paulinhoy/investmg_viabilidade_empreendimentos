@@ -10,6 +10,9 @@ from numpy_financial import irr, mirr, npv
 TAXA_FINANCIAMENTO = 0.1102
 TAXA_REINVESTIMENTO = 0.15
 TAXA_DESCONTO = 0.1102
+# As receitas vêm do banco sem inflação (moeda constante). O resultado "corrigido" leva os fluxos
+# a valores nominais, multiplicando o ano t por (1 + INFLACAO_ANUAL)^t, com t = 0 no primeiro ano.
+INFLACAO_ANUAL = 0.03
 
 PASTA_DADOS = "dados_brutos"   # pasta extraída do dados_brutos.zip (gerado por baixar_dados.py)
 PASTA_SAIDA = "saida"
@@ -51,6 +54,7 @@ def preparar_fluxo_caixa(df_receita, df_custo):
     df_final['custo'] = np.where(df_final['ano_corrente'] == primeiro_ano, df_final['custo_final'], 0.0)
     df_final['fluxo'] = df_final['receita_ano'] - df_final['custo']
     df_final['t'] = (df_final['ano_corrente'] - primeiro_ano).astype(int)
+    df_final['fluxo_corrigido'] = df_final['fluxo'] * (1 + INFLACAO_ANUAL) ** df_final['t']
     df_final = df_final.drop(columns=['custo_final'])
 
     linhas_com_nan = df_final['fluxo'].isna()
@@ -60,12 +64,14 @@ def preparar_fluxo_caixa(df_receita, df_custo):
     return df_final.sort_values(by=['id_empreendimento', 'id_cenario', 'ano_corrente'])
 
 def calcular_indicadores_financeiros(grupo):
-    """Calcula VPL e TIRM para uma série de fluxos."""
-    fluxos_de_caixa = grupo['fluxo'].values
-    valor_vpl = npv(TAXA_DESCONTO, fluxos_de_caixa)
-    valor_tirm = mirr(fluxos_de_caixa, finance_rate=TAXA_FINANCIAMENTO, reinvest_rate=TAXA_REINVESTIMENTO)
+    """Calcula VPL e TIRM em moeda constante e com o fluxo corrigido pela inflação."""
+    resultado = {}
+    for coluna, sufixo in [('fluxo', ''), ('fluxo_corrigido', '_corrigido')]:
+        fluxos_de_caixa = grupo[coluna].values
+        resultado['vpl' + sufixo] = npv(TAXA_DESCONTO, fluxos_de_caixa)
+        resultado['tirm' + sufixo] = mirr(fluxos_de_caixa, finance_rate=TAXA_FINANCIAMENTO, reinvest_rate=TAXA_REINVESTIMENTO)
 
-    return pd.Series({'vpl': valor_vpl, 'tirm': valor_tirm})
+    return pd.Series(resultado)
 
 def consolidar_relatorio(df_resultados, dados):
     """Une resultados financeiros com dados cadastrais, capex/opex e receitas."""
@@ -76,22 +82,23 @@ def consolidar_relatorio(df_resultados, dados):
 
     # Mesclar resultados básicos e TIR
     df_tabela = pd.merge(df_emps_esperados, df_resultados, on=['id_empreendimento', 'id_cenario'], how='left')
-    df_tabela.rename(columns={'tirm': 'tirm_codemge'}, inplace=True)
+    df_tabela.rename(columns={'tirm': 'tirm_codemge', 'tirm_corrigido': 'tirm_codemge_corrigido'}, inplace=True)
 
     # Cálculos percentuais
     df_tabela['tirm_codemge'] = df_tabela['tirm_codemge'] * 100
+    df_tabela['tirm_codemge_corrigido'] = df_tabela['tirm_codemge_corrigido'] * 100
 
     # Mesclar com informações do empreendimento
     cols_base = [
         'id_empreendimento', 'id_cenario', 'nome_empreendimento', 'id_setor', 'setor', 
         'natureza_empreendimento', 'numero_obras', 'descr_status_empreendimento', 
         'esfera_acao', 'intervencao_principal', 'grupo_modelagem', 'data_inicio', 
-        'data_conclusao', 'vpl', 'tirm_codemge'
+        'data_conclusao', 'vpl', 'tirm_codemge', 'vpl_corrigido', 'tirm_codemge_corrigido'
     ]
     df_banco = pd.merge(df_tabela, df_emp, on='id_empreendimento', how='inner')[cols_base]
 
     # Arredondamentos e ordenação
-    df_banco['tirm_codemge'] = df_banco['tirm_codemge'].round(2)
+    df_banco[['tirm_codemge', 'tirm_codemge_corrigido']] = df_banco[['tirm_codemge', 'tirm_codemge_corrigido']].round(2)
     df_banco = df_banco.sort_values(by=['id_empreendimento', 'id_cenario'])
 
     # Mesclar Capex/Opex
@@ -109,7 +116,8 @@ def consolidar_relatorio(df_resultados, dados):
     # Adicionando dados de ferroviarios de passageiro, concessão light, aeroportuario e dutoviario
     # (o filtro de colunas também descarta as colunas de infra de extrações antigas)
     df_externos = [dados["df_ferroviario_passageiro"], dados["df_light"], dados["df_aero_duto"]]
-    df_banco_receita = pd.concat([df_banco_receita] + [df[cols_finais] for df in df_externos], ignore_index=True)
+    # (as tabelas externas não têm as colunas corrigidas, que ficam vazias)
+    df_banco_receita = pd.concat([df_banco_receita] + [df.reindex(columns=cols_finais) for df in df_externos], ignore_index=True)
 
     return df_banco_receita
 
@@ -310,6 +318,6 @@ if __name__ == "__main__":
     print("\n✅ Processamento concluído com sucesso!")
 
     # 5. Exportar localmente
-    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'fluxo']
+    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'fluxo', 'fluxo_corrigido']
     exportar_tabela(df_fluxo[colunas_fluxo], "fluxo_caixa")
     exportar_tabela(df_final, "resultados")

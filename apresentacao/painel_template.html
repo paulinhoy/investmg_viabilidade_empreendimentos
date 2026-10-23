@@ -338,6 +338,10 @@ table.t tr.fraca td { color: var(--tinta-3); }
         <button class="aba" role="tab" id="aba-ranking"><span class="n">05</span>Ranking</button>
       </nav>
       <div class="direita">
+        <span class="segmentado" id="seg-moeda" role="group" aria-label="Tratamento da moeda">
+          <button type="button" data-moeda="constante">Moeda constante</button>
+          <button type="button" data-moeda="inflacao" id="bt-inflacao">Com inflação</button>
+        </span>
         <span class="chip" id="chip-taxa"></span>
         <div class="nav">
           <button class="seta" id="anterior" type="button" aria-label="Aba anterior">‹</button>
@@ -506,6 +510,20 @@ table.t tr.fraca td { color: var(--tinta-3); }
   const META = DADOS.meta;
   const EMPS = DADOS.emps;
   const POR_ID = new Map(EMPS.map(e => [e.id, e]));
+  // Receitas do banco estão em moeda constante. No modo "inflação" o ano t é multiplicado
+  // por (1 + inflação)^t (t = 0 no primeiro ano), igual ao fluxo_corrigido do tirm_peltmg.py.
+  const INFLACAO = META.inflacao_anual;
+  EMPS.forEach(e => {
+    const corrigir = serie => serie.map((v, t) => v * Math.pow(1 + INFLACAO, t));
+    e.series = {
+      constante: { fluxo: e.fluxo, receita: e.receita },
+      inflacao: { fluxo: corrigir(e.fluxo), receita: corrigir(e.receita) }
+    };
+  });
+  function aplicarMoeda() {
+    EMPS.forEach(e => { const s = e.series[estado.moeda]; e.fluxo = s.fluxo; e.receita = s.receita; });
+  }
+  const NOME_MOEDA = () => (estado.moeda === "inflacao" ? `com inflação de ${pct(INFLACAO, 1)} a.a.` : "moeda constante");
 
   // ---------------------------------------------------------------- cálculo (mesmo do contraprestacao.py)
   // <calc>
@@ -553,6 +571,7 @@ table.t tr.fraca td { color: var(--tinta-3); }
   const ESTADO_PADRAO_TAXA = META.taxa_desconto;
   const estado = {
     taxa: META.taxa_desconto,
+    moeda: "constante",
     inicio: 1,
     fim: 5,
     emp: (POR_ID.has(11) ? 11 : EMPS[0].id),
@@ -682,8 +701,10 @@ table.t tr.fraca td { color: var(--tinta-3); }
     document.getElementById("mom-duracao-valor").textContent = `${dur.value} ${dur.value == 1 ? "ano" : "anos"}`;
     const chip = document.getElementById("chip-taxa");
     chip.textContent = `taxa ${pct(estado.taxa)} · anos ${estado.inicio}–${estado.fim}`;
+    document.querySelectorAll("#seg-moeda button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.moeda === estado.moeda)));
+    document.getElementById("bt-inflacao").textContent = `Com inflação ${pct(INFLACAO, 1)}`;
     chip.className = "chip" + (Math.abs(estado.taxa - ESTADO_PADRAO_TAXA) > 1e-9 ? " alerta" : " ok");
-    const premissas = `Desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo`;
+    const premissas = `Fluxo ${NOME_MOEDA()} · desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo`;
     document.querySelectorAll(".rodape-premissas").forEach((s, i, todos) => { if (i < todos.length - 1) s.textContent = premissas; });
     const fonte = `Fonte: PELT-MG, carteira recomendada (cenário 10), esfera estadual, status de Concepção a Em contratação` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
     document.querySelectorAll(".rodape-fonte").forEach(s => { s.textContent = fonte; });
@@ -782,7 +803,9 @@ table.t tr.fraca td { color: var(--tinta-3); }
 
     document.getElementById("lado-calculo").innerHTML = `
       <ol class="passos">
-        <li><div><b>Trazer o fluxo para hoje</b><span class="det">Receitas e custo (CAPEX + OPEX, no ano 1) divididos por (1 + ${pct(r)})<sup>ano − 1</sup>. A soma é a VPL: desconta a perda de valor da moeda e o custo de oportunidade.</span></div></li>
+        <li><div><b>Trazer o fluxo para hoje</b><span class="det">${estado.moeda === "inflacao"
+          ? `Receitas do ano t corrigidas por (1 + ${pct(INFLACAO, 1)})<sup>t</sup> e depois divididas por (1 + ${pct(r)})<sup>t</sup>; custo (CAPEX + OPEX) no ano 1. A inflação aumenta as receitas futuras em reais correntes.`
+          : `Receitas (em moeda constante, sem inflação) e custo (CAPEX + OPEX, no ano 1) divididos por (1 + ${pct(r)})<sup>ano − 1</sup>. A soma é a VPL.`}</span></div></li>
         <li><div><b>VPL negativa = o que falta</b><span class="det">Em reais de hoje, é o que o investidor perderia. O aporte cobre exatamente isso.</span></div></li>
         <li><div><b>Dividir pelos fatores dos anos do aporte</b><span class="det">Cada real futuro vale menos, então o Estado paga mais em valor nominal.</span></div></li>
       </ol>
@@ -839,7 +862,7 @@ table.t tr.fraca td { color: var(--tinta-3); }
         <p class="nota">${esc(e.setor)} · ${esc(e.intervencao || "")}</p></div>
       <div class="bloco"><h3>Fluxo de caixa</h3>
         <p>Custo no ano 1 (${e.ano0}): <span class="forte num">${moeda(e.custo)}</span> <span class="nota">CAPEX ${moeda(e.capex)} · OPEX ${moeda(e.opex)}</span></p>
-        <p>Receita em ${n} anos: <span class="forte num">${moeda(receitaTotal)}</span> (nominal)</p></div>
+        <p>Receita em ${n} anos: <span class="forte num">${moeda(receitaTotal)}</span> (${NOME_MOEDA()})</p></div>
       <div class="bloco"><h3>Leitura</h3>${precisa
         ? `<p>Trazidos a hoje, faltam <span class="forte laranja-t num">${moeda(-r.vplOriginal)}</span>. O Estado paga <span class="forte azul-t num">${moeda(r.anual)}</span> por ano durante ${estado.fim - estado.inicio + 1} anos (${moeda(r.total)} no total), que valem exatamente isso hoje.</p>
            <p class="nota">Aporte total = ${pct(r.total / e.custo, 0)} do custo do empreendimento.</p>`
@@ -1015,11 +1038,13 @@ table.t tr.fraca td { color: var(--tinta-3); }
   // ---------------------------------------------------------------- orquestração
   const DESENHOS = [desenharVisao, desenharCalculo, desenharSimulador, desenharMomento, desenharRanking];
   function atualizar() {
+    aplicarMoeda();
     limitarAnos();
     sincronizarControles();
     DESENHOS.forEach(d => d());
   }
 
+  document.querySelectorAll("#seg-moeda button").forEach(b => b.addEventListener("click", () => { estado.moeda = b.dataset.moeda; atualizar(); }));
   document.getElementById("c-taxa").addEventListener("input", ev => { estado.taxa = parseFloat(ev.target.value); atualizar(); });
   document.getElementById("c-taxa-padrao").addEventListener("click", () => { estado.taxa = ESTADO_PADRAO_TAXA; atualizar(); });
   document.getElementById("mom-duracao").addEventListener("input", ev => {
