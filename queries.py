@@ -65,8 +65,8 @@ QUERIES = {
     """,
     "ferroviario_passageiro": """
     SELECT 
-  def.id_empreendimento,
-  def.id_cenario,
+  dfe.id_empreendimento,
+  dfe.id_cenario,
   ve.nome_empreendimento,
   ve.id_setor,
   ve.setor,
@@ -80,20 +80,20 @@ QUERIES = {
   ve.data_conclusao,
   NULL AS vpl,
   NULL AS tirm_infra,
-  def.tir*100 AS tirm_codemge,
+  dfe.tir*100 AS tirm_codemge,
   NULL AS diff,
-  def.capex,
-  def.opex,
+  dfe.capex,
+  dfe.opex,
   NULL AS receita_seinfra,
-  def.receita AS receita_codemge
+  dfe.receita AS receita_codemge
 FROM carteira.vw_empreendimento ve 
-LEFT JOIN financeiro.dados_externos_financeiros def  ON ve.id_empreendimento = def.id_empreendimento 
-WHERE ve.id_nat_empreendimento = 1 and ve.id_setor = 2 AND def.id_empreendimento IS NOT NULL and tir IS NOT NULL 
+LEFT JOIN financeiro.dados_externos_financeiros dfe ON ve.id_empreendimento = dfe.id_empreendimento 
+WHERE ve.id_nat_empreendimento = 1 and ve.id_setor = 2 AND dfe.id_empreendimento IS NOT NULL AND dfe.tir IS NOT NULL 
     """,
     "aero_duto": """
     select
-  def.id_empreendimento,
-  def.id_cenario,
+  dfe.id_empreendimento,
+  dfe.id_cenario,
   ve.nome_empreendimento,
   ve.id_setor,
   ve.setor,
@@ -107,20 +107,20 @@ WHERE ve.id_nat_empreendimento = 1 and ve.id_setor = 2 AND def.id_empreendimento
   ve.data_conclusao,
   NULL AS vpl,
   NULL AS tirm_infra,
-  def.tir*100 AS tirm_codemge,
+  dfe.tir*100 AS tirm_codemge,
   NULL AS diff,
-  def.capex,
-  def.opex,
+  dfe.capex,
+  dfe.opex,
   NULL AS receita_seinfra,
-  def.receita AS receita_codemge
+  dfe.receita AS receita_codemge
 FROM carteira.vw_empreendimento ve 
-LEFT JOIN financeiro.dados_externos_financeiros def  ON ve.id_empreendimento = def.id_empreendimento 
-WHERE ve.id_setor in (5,6) AND def.id_empreendimento IS NOT NULL and tir IS NOT NULL 
+LEFT JOIN financeiro.dados_externos_financeiros dfe ON ve.id_empreendimento = dfe.id_empreendimento 
+WHERE ve.id_setor in (5,6) AND dfe.id_empreendimento IS NOT NULL AND dfe.tir IS NOT NULL 
     """,
     "concessao_light": """
     SELECT 
-  def.id_empreendimento,
-  def.id_cenario,
+  dfe.id_empreendimento,
+  dfe.id_cenario,
   ve.nome_empreendimento,
   ve.id_setor,
   ve.setor,
@@ -134,14 +134,14 @@ WHERE ve.id_setor in (5,6) AND def.id_empreendimento IS NOT NULL and tir IS NOT 
   ve.data_conclusao,
   NULL AS vpl,
   NULL AS tirm_infra,
-  def.tir*100 AS tirm_codemge,
+  dfe.tir*100 AS tirm_codemge,
   NULL AS diff,
-  def.capex,
-  def.opex,
+  dfe.capex,
+  dfe.opex,
   NULL AS receita_seinfra,
-  def.receita AS receita_codemge
+  dfe.receita AS receita_codemge
 FROM carteira.vw_empreendimento ve 
-LEFT JOIN financeiro.dados_externos_financeiros def  ON ve.id_empreendimento = def.id_empreendimento 
-WHERE def.id_empreendimento in (1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1993, 1995)
+LEFT JOIN financeiro.dados_externos_financeiros dfe ON ve.id_empreendimento = dfe.id_empreendimento 
+WHERE dfe.id_empreendimento in (1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1993, 1995)
     """
 }

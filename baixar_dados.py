@@ -44,11 +44,17 @@ def salvar_tabela(df, nome, pasta):
     return os.path.basename(caminho)
 
 def baixar_queries(engine, pasta):
-    """Executa todas as queries de QUERIES e salva cada uma em um arquivo."""
+    """Executa todas as queries de QUERIES e salva cada uma em um arquivo.
+    Se uma query falhar, registra o erro completo e segue para a próxima."""
     manifesto = {}
     for nome, query in QUERIES.items():
         print(f"Baixando '{nome}'...")
-        df = pd.read_sql(query, engine)
+        try:
+            df = pd.read_sql(query, engine)
+        except Exception as erro:
+            print(f"  ❌ Erro na query '{nome}':\n{erro}")
+            manifesto[nome] = {"erro": str(erro)}
+            continue
         arquivo = salvar_tabela(df, nome, pasta)
         manifesto[nome] = {"arquivo": arquivo, "linhas": len(df), "colunas": list(df.columns)}
         print(f"  {len(df)} linhas -> {arquivo}")
