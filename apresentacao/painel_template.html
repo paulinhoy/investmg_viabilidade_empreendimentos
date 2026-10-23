@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contraprestação PELT-MG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout (mesmo estilo de apresentacao_ref): palco 16:9 de 1920×1080 escalado para a tela.
+   Barra de abas no topo; cada aba é um slide com título-conclusão, faixa de 4 números,
+   figura principal e coluna de leitura. Azul = aporte do Estado / ganho, laranja = perda. */
+:root {
+  --superficie: #fcfcfb;
+  --pagina: #e8e7e2;
+  --tinta: #0b0b0b;
+  --tinta-2: #52514e;
+  --tinta-3: #898781;
+  --grade: #e1e0d9;
+  --eixo: #c3c2b7;
+  --borda: rgba(11, 11, 11, 0.10);
+  --realce: #f3f2ee;
+  --azul: #2a78d6;
+  --azul-claro: #86b6ef;
+  --azul-lavado: rgba(42, 120, 214, 0.10);
+  --laranja: #eb6834;
+  --laranja-lavado: rgba(235, 104, 52, 0.12);
+  --cinza: #b5b4ac;
+  --setor-rodo: #2a78d6;
+  --setor-ferro: #52514e;
+  --setor-hidro: #86b6ef;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --fs-kicker: 17px;
+  --fs-titulo: 46px;
+  --fs-sub: 22px;
+  --fs-kpi: 44px;
+  --fs-kpi-rot: 18px;
+  --fs-kpi-sub: 15px;
+  --fs-corpo: 20px;
+  --fs-pequeno: 16px;
+  --fs-legenda: 15px;
+  --fs-g: 17px;
+  --fs-gp: 15px;
+  color-scheme: light;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--pagina);
+  color: var(--tinta);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input, select { font-family: inherit; color: inherit; }
+
+.deck { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.palco {
+  position: absolute; left: 0; top: 0;
+  width: 1920px; height: 1080px;
+  transform-origin: 0 0;
+  background: var(--superficie);
+  box-shadow: 0 0 0 1px var(--borda);
+  overflow: hidden;
+}
+
+/* ---------- barra de abas ---------- */
+.barra {
+  position: absolute; left: 0; right: 0; top: 0; height: 64px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 22px;
+  padding: 0 28px 0 40px;
+  border-bottom: 1px solid var(--grade);
+  background: var(--superficie);
+  z-index: 5;
+}
+.marca { display: grid; gap: 3px; line-height: 1.1; white-space: nowrap; }
+.marca strong { font-weight: 600; font-size: 16px; }
+.marca span { font-size: 13px; color: var(--tinta-2); }
+.abas { display: flex; margin-left: auto; height: 100%; }
+.aba {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  height: 100%; padding: 0 12px; box-sizing: border-box;
+  border-bottom: 2px solid transparent; border-top: 2px solid transparent;
+  font: 500 15px/1 var(--sans); color: var(--tinta-2); white-space: nowrap;
+}
+.aba .n { font: 500 13px/1 var(--mono); color: var(--tinta-3); margin-right: 6px; }
+.aba:hover { color: var(--tinta); }
+.aba[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--tinta); }
+.aba[aria-selected="true"] .n { color: var(--tinta); }
+.direita { display: flex; align-items: center; gap: 12px; }
+.nav { display: flex; align-items: center; gap: 4px; font: 500 14px/1 var(--mono); color: var(--tinta-2); }
+.nav .contador { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+.seta {
+  appearance: none; cursor: pointer; width: 32px; height: 32px; border-radius: 6px;
+  border: 1px solid var(--grade); background: var(--superficie); color: var(--tinta);
+  font: 500 18px/1 var(--sans); display: grid; place-items: center; padding: 0;
+}
+.seta:hover { background: var(--realce); }
+.seta:disabled { color: var(--eixo); cursor: default; background: var(--superficie); }
+
+/* ---------- botões e campos ---------- */
+.botao {
+  appearance: none; cursor: pointer; white-space: nowrap;
+  font: 500 14px/1 var(--mono); letter-spacing: 0.02em; color: var(--tinta);
+  background: var(--superficie); border: 1px solid var(--eixo); border-radius: 6px; padding: 9px 13px;
+}
+.botao:hover { background: var(--realce); }
+:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font: 500 13px/1 var(--mono); letter-spacing: 0.02em;
+  padding: 5px 10px 5px 8px; border-radius: 999px;
+  border: 1px solid var(--eixo); color: var(--tinta-2); background: var(--superficie);
+}
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid currentColor; }
+.chip.ok { color: var(--azul); border-color: var(--azul); }
+.chip.ok::before { background: currentColor; }
+.chip.alerta { color: var(--laranja); border-color: var(--laranja); }
+.chip.alerta::before { background: currentColor; }
+
+.campo { display: inline-flex; align-items: baseline; gap: 6px; }
+.campo input, .campo select {
+  box-sizing: border-box; padding: 6px 2px 5px;
+  font: 500 18px/1.2 var(--mono); font-variant-numeric: tabular-nums;
+  background: transparent; border: 0; border-bottom: 1px solid var(--eixo); border-radius: 0;
+}
+.campo input[type="number"] { width: 72px; text-align: right; }
+.campo input:hover, .campo select:hover { border-bottom-color: var(--tinta-2); }
+.campo input:focus, .campo select:focus { outline: none; border-bottom: 2px solid var(--azul); padding-bottom: 4px; }
+.campo .u { font: 400 14px/1 var(--mono); color: var(--tinta-3); }
+.rotulo { font: 500 14px/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-2); }
+
+.deslizante { display: grid; gap: 8px; min-width: 0; }
+.deslizante .topo { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.deslizante .valor { margin-left: auto; font: 600 22px/1 var(--sans); font-variant-numeric: tabular-nums; }
+.deslizante .ref { font: 400 13px/1.3 var(--mono); color: var(--tinta-3); }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 24px; margin: 0; background: transparent; cursor: pointer;
+  --cheio: 50%;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--azul) 0, var(--azul) var(--cheio), var(--grade) var(--cheio), var(--grade) 100%);
+}
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grade); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--azul); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%;
+  background: var(--superficie); border: 2px solid var(--azul); box-sizing: border-box;
+}
+input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--superficie); border: 2px solid var(--azul); box-sizing: border-box; }
+
+.segmentado { display: inline-flex; border: 1px solid var(--eixo); border-radius: 6px; overflow: hidden; }
+.segmentado button {
+  appearance: none; border: 0; background: var(--superficie); cursor: pointer;
+  font: 500 13px/1 var(--mono); padding: 8px 12px; color: var(--tinta-2);
+}
+.segmentado button + button { border-left: 1px solid var(--eixo); }
+.segmentado button[aria-pressed="true"] { background: var(--tinta); color: var(--superficie); }
+
+/* ---------- trilho e slides ---------- */
+.trilho {
+  position: absolute; left: 0; top: 64px; height: 1016px;
+  display: flex;
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.slide {
+  position: relative; flex: 0 0 1920px; width: 1920px; height: 1016px; box-sizing: border-box;
+  padding: 34px 72px 22px;
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 24px;
+}
+.slide.com-controles { grid-template-rows: auto auto auto minmax(0, 1fr) auto; row-gap: 20px; }
+.cabeca { display: grid; gap: 10px; }
+.kicker { font: 500 var(--fs-kicker)/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-2); }
+.titulo {
+  margin: 0; max-width: 1700px; min-height: 1.12em;
+  font: 600 var(--fs-titulo)/1.12 var(--sans); letter-spacing: -0.012em; text-wrap: balance;
+}
+.sub { margin: 0; font-size: var(--fs-sub); line-height: 1.35; color: var(--tinta-2); max-width: 1400px; }
+
+/* ---------- números ---------- */
+.kpis {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--grade); border-bottom: 1px solid var(--grade);
+}
+.kpi { padding: 16px 24px 18px 0; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.kpi + .kpi { padding-left: 26px; border-left: 1px solid var(--grade); }
+.kpi .v { font: 600 var(--fs-kpi)/1.02 var(--sans); letter-spacing: -0.015em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kpi .v.azul { color: var(--azul); }
+.kpi .v.laranja { color: var(--laranja); }
+.kpi .r { font-size: var(--fs-kpi-rot); line-height: 1.3; }
+.kpi .s { font: 400 var(--fs-kpi-sub)/1.4 var(--mono); color: var(--tinta-2); }
+
+/* ---------- controles ---------- */
+.controles {
+  display: flex; align-items: end; gap: 44px; flex-wrap: wrap;
+  border-top: 1px solid var(--grade); border-bottom: 1px solid var(--grade); padding: 14px 0 16px;
+}
+.controle { display: grid; gap: 8px; }
+.controle.largo { flex: 1 1 520px; min-width: 0; }
+.controle.largo select { width: 100%; max-width: 900px; text-overflow: ellipsis; }
+.controle .deslizante { width: 440px; }
+
+/* ---------- corpo ---------- */
+.corpo { display: grid; grid-template-columns: minmax(0, 1fr) 520px; grid-template-rows: minmax(0, 1fr); column-gap: 56px; min-height: 0; }
+.coluna { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; min-width: 0; }
+.coluna.empilhada { grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); row-gap: 22px; }
+.lado { display: grid; align-content: start; gap: 22px; min-width: 0; font-size: var(--fs-corpo); line-height: 1.45; }
+.lado h3 { margin: 0; font: 500 var(--fs-kicker)/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-2); }
+.lado p { margin: 0; }
+.lado .bloco { display: grid; gap: 10px; }
+.nota { font-size: var(--fs-pequeno); line-height: 1.45; color: var(--tinta-2); margin: 0; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.forte { font-weight: 600; }
+.azul-t { color: var(--azul); }
+.laranja-t { color: var(--laranja); }
+
+.formula {
+  font: 500 22px/1.5 var(--mono); padding: 16px 18px; border-radius: 8px;
+  background: var(--realce); border: 1px solid var(--grade);
+}
+.formula .op { color: var(--tinta-3); }
+.passos { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: p; }
+#lado-calculo { gap: 16px; }
+#lado-calculo .formula { font-size: 20px; padding: 12px 16px; }
+.passos li { counter-increment: p; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px; }
+.passos li::before {
+  content: counter(p); font: 600 14px/1 var(--mono); color: var(--tinta);
+  width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--tinta);
+  display: grid; place-items: center; box-sizing: border-box; margin-top: 2px;
+}
+.passos li span.det { display: block; color: var(--tinta-2); font-size: var(--fs-pequeno); }
+
+.fig { margin: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-height: 0; min-width: 0; }
+.fig-cab {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; min-width: 0;
+  font: 400 var(--fs-legenda)/1.35 var(--mono); color: var(--tinta-2);
+}
+.fig-cab b { font: 600 18px/1.3 var(--sans); color: var(--tinta); }
+.fig-cab .legenda { margin-left: auto; display: inline-flex; gap: 20px; flex-wrap: wrap; }
+.fig-cab .legenda span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.amostra { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.amostra.linha { height: 3px; width: 16px; border-radius: 2px; }
+.amostra.tracejada { height: 0; width: 16px; border-top: 3px dashed var(--laranja); border-radius: 0; }
+.grafico { position: relative; min-height: 0; min-width: 0; }
+.grafico svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+.g { font-family: var(--sans); font-size: var(--fs-g); fill: var(--tinta); }
+.gp { font-family: var(--sans); font-size: var(--fs-gp); fill: var(--tinta-2); }
+.gm { font-family: var(--mono); font-size: 14px; fill: var(--tinta-3); font-variant-numeric: tabular-nums; }
+.gf { font-weight: 600; }
+.grafico text { paint-order: stroke; stroke: var(--superficie); stroke-width: 4px; stroke-linejoin: round; }
+.alvo { cursor: pointer; }
+.alvo:hover .marca { filter: brightness(1.15); }
+
+/* ---------- tabela ---------- */
+.tabela-rolagem { min-height: 0; overflow: auto; border-top: 1px solid var(--eixo); }
+table.t { width: 100%; border-collapse: collapse; font-size: var(--fs-pequeno); line-height: 1.35; }
+table.t th {
+  position: sticky; top: 0; background: var(--superficie); z-index: 1;
+  text-align: left; font: 500 13px/1.3 var(--mono); letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--tinta-2); padding: 10px 12px 9px 0; border-bottom: 1px solid var(--eixo); vertical-align: bottom;
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+table.t th:hover { color: var(--tinta); }
+table.t th .seta-ordem { color: var(--azul); }
+table.t td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--grade); vertical-align: middle; }
+table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.t td .sub2 { display: block; font: 400 13px/1.3 var(--mono); color: var(--tinta-3); }
+table.t td.nome { max-width: 640px; }
+table.t tbody tr { cursor: pointer; }
+table.t tbody tr:hover td { background: var(--realce); }
+table.t tr.fraca td { color: var(--tinta-3); }
+.barrinha { display: inline-block; height: 8px; border-radius: 2px; background: var(--azul); vertical-align: middle; margin-left: 8px; }
+
+/* ---------- dica (tooltip) ---------- */
+.dica {
+  position: absolute; z-index: 9; pointer-events: none;
+  transform: translate(-50%, calc(-100% - 14px));
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(11, 11, 11, 0.12);
+  padding: 10px 14px; display: grid; gap: 4px; min-width: 160px; max-width: 460px;
+  font-size: 15px; line-height: 1.3; color: var(--tinta-2);
+}
+.dica strong { font-size: 21px; font-weight: 600; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.dica .m { font-family: var(--mono); font-size: 13px; color: var(--tinta-3); }
+
+/* ---------- rodapé ---------- */
+.rodape {
+  display: flex; justify-content: space-between; gap: 40px;
+  border-top: 1px solid var(--grade); padding-top: 11px;
+  font: 400 14px/1.45 var(--mono); color: var(--tinta-3);
+}
+
+/* ---------- tela estreita: sem escala, abas em sequência ---------- */
+@media (max-width: 760px) {
+  :root {
+    --fs-kicker: 11px; --fs-titulo: 24px; --fs-sub: 14px; --fs-kpi: 24px; --fs-kpi-rot: 13px;
+    --fs-kpi-sub: 11px; --fs-corpo: 14px; --fs-pequeno: 13px; --fs-legenda: 12px; --fs-g: 11px; --fs-gp: 10px;
+  }
+  html, body { height: auto; }
+  .deck { height: auto; overflow: visible; }
+  .palco { position: static; width: auto; height: auto; transform: none !important; box-shadow: none; overflow: visible; }
+  .barra { position: sticky; top: 0; height: auto; flex-wrap: wrap; gap: 8px; padding: 10px 16px 0; }
+  .abas { margin-left: 0; width: 100%; overflow-x: auto; height: 44px; order: 3; }
+  .nav { display: none; }
+  .trilho { position: static; display: block; transform: none !important; height: auto; }
+  .slide { display: none; width: auto; height: auto; flex: none; padding: 18px 16px 24px; row-gap: 18px; }
+  .slide.ativo { display: grid; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:nth-child(3) { padding-left: 0; border-left: 0; }
+  .corpo { grid-template-columns: minmax(0, 1fr); row-gap: 24px; }
+  .grafico { min-height: 280px; }
+  .coluna, .coluna.empilhada { grid-template-rows: auto; }
+  .controle .deslizante { width: 100%; }
+  .tabela-rolagem { max-height: 70vh; }
+  .rodape { flex-direction: column; gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .trilho { transition: none; } }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <div class="palco" id="palco">
+    <header class="barra">
+      <div class="marca"><strong>PELT-MG · Contraprestação do Estado</strong><span>Carteira recomendada · painel de teste</span></div>
+      <nav class="abas" role="tablist" aria-label="Abas do painel">
+        <button class="aba" role="tab" id="aba-visao"><span class="n">01</span>Visão geral</button>
+        <button class="aba" role="tab" id="aba-calculo"><span class="n">02</span>Como calculamos</button>
+        <button class="aba" role="tab" id="aba-simulador"><span class="n">03</span>Simulador</button>
+        <button class="aba" role="tab" id="aba-momento"><span class="n">04</span>Momento do aporte</button>
+        <button class="aba" role="tab" id="aba-ranking"><span class="n">05</span>Ranking</button>
+      </nav>
+      <div class="direita">
+        <span class="chip" id="chip-taxa"></span>
+        <div class="nav">
+          <button class="seta" id="anterior" type="button" aria-label="Aba anterior">‹</button>
+          <span class="contador" id="contador">1 / 5</span>
+          <button class="seta" id="proximo" type="button" aria-label="Próxima aba">›</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="trilho" id="trilho">
+
+      <!-- 01 · VISÃO GERAL -->
+      <section class="slide" id="s-visao" role="tabpanel" aria-labelledby="aba-visao">
+        <header class="cabeca">
+          <div class="kicker">01 · Visão geral da carteira</div>
+          <h2 class="titulo" id="titulo-visao"></h2>
+        </header>
+        <div class="kpis" id="k-visao"></div>
+        <div class="corpo">
+          <figure class="fig">
+            <figcaption class="fig-cab"><b>Aporte anual necessário, por empreendimento</b><span id="cab-visao"></span>
+              <span class="legenda"><span><i class="amostra" style="background:var(--setor-rodo)"></i>Rodoviário</span><span><i class="amostra" style="background:var(--setor-ferro)"></i>Ferroviário</span><span><i class="amostra" style="background:var(--setor-hidro)"></i>Hidroviário</span></span>
+            </figcaption>
+            <div class="grafico" id="g-visao"></div>
+          </figure>
+          <aside class="lado" id="lado-visao"></aside>
+        </div>
+        <footer class="rodape"><span class="rodape-fonte"></span><span class="rodape-premissas"></span></footer>
+      </section>
+
+      <!-- 02 · COMO CALCULAMOS -->
+      <section class="slide com-controles" id="s-calculo" role="tabpanel" aria-labelledby="aba-calculo">
+        <header class="cabeca">
+          <div class="kicker">02 · Como calculamos o aporte</div>
+          <h2 class="titulo">R$ 1 pago no futuro vale menos que R$ 1 hoje — por isso o aporte é trazido a valor presente</h2>
+        </header>
+        <div class="controles">
+          <div class="controle">
+            <div class="deslizante">
+              <div class="topo"><label class="rotulo" for="c-taxa">Taxa de desconto</label><span class="valor" id="c-taxa-valor"></span></div>
+              <input type="range" id="c-taxa" min="0.02" max="0.20" step="0.0001">
+              <div class="topo"><span class="ref" id="c-taxa-ref"></span><button class="botao" type="button" id="c-taxa-padrao" style="margin-left:auto; padding:6px 10px">Voltar ao padrão</button></div>
+            </div>
+          </div>
+          <div class="controle"><span class="rotulo">Anos do aporte</span>
+            <span class="campo"><input type="number" class="in-inicio" min="1" max="60" step="1"><span class="u">até</span><input type="number" class="in-fim" min="1" max="60" step="1"><span class="u">ano da concessão</span></span>
+          </div>
+        </div>
+        <div class="kpis" id="k-calculo"></div>
+        <div class="corpo">
+          <figure class="fig">
+            <figcaption class="fig-cab"><b>Quanto vale hoje R$ 1,00 recebido em cada ano da concessão</b><span>fator de desconto = 1 ÷ (1 + taxa)<sup>ano − 1</sup></span>
+              <span class="legenda"><span><i class="amostra" style="background:var(--azul)"></i>Anos com aporte</span><span><i class="amostra" style="background:var(--cinza)"></i>Demais anos</span></span>
+            </figcaption>
+            <div class="grafico" id="g-calculo"></div>
+          </figure>
+          <aside class="lado" id="lado-calculo"></aside>
+        </div>
+        <footer class="rodape"><span class="rodape-fonte"></span><span class="rodape-premissas"></span></footer>
+      </section>
+
+      <!-- 03 · SIMULADOR -->
+      <section class="slide com-controles" id="s-simulador" role="tabpanel" aria-labelledby="aba-simulador">
+        <header class="cabeca">
+          <div class="kicker">03 · Simulador por empreendimento</div>
+          <h2 class="titulo" id="titulo-simulador"></h2>
+        </header>
+        <div class="controles">
+          <div class="controle largo"><label class="rotulo" for="sim-emp">Empreendimento</label>
+            <span class="campo" style="display:flex"><select id="sim-emp" class="sel-emp"></select></span>
+          </div>
+          <div class="controle"><span class="rotulo">Anos do aporte</span>
+            <span class="campo"><input type="number" class="in-inicio" min="1" max="60" step="1"><span class="u">até</span><input type="number" class="in-fim" min="1" max="60" step="1"><span class="u" id="sim-anos-civis"></span></span>
+          </div>
+        </div>
+        <div class="kpis" id="k-simulador"></div>
+        <div class="corpo">
+          <div class="coluna empilhada">
+            <figure class="fig">
+              <figcaption class="fig-cab"><b>VPL acumulada ao longo da concessão</b><span>soma dos fluxos trazidos a valor presente</span>
+                <span class="legenda"><span><i class="amostra linha tracejada"></i>Sem aporte</span><span><i class="amostra linha" style="background:var(--azul)"></i>Com aporte do Estado</span></span>
+              </figcaption>
+              <div class="grafico" id="g-sim-vpl"></div>
+            </figure>
+            <figure class="fig">
+              <figcaption class="fig-cab"><b>Entradas anuais</b><span>valores nominais (sem desconto)</span>
+                <span class="legenda"><span><i class="amostra" style="background:var(--cinza)"></i>Receita</span><span><i class="amostra" style="background:var(--azul)"></i>Aporte do Estado</span></span>
+              </figcaption>
+              <div class="grafico" id="g-sim-entradas"></div>
+            </figure>
+          </div>
+          <aside class="lado" id="lado-simulador"></aside>
+        </div>
+        <footer class="rodape"><span class="rodape-fonte"></span><span class="rodape-premissas"></span></footer>
+      </section>
+
+      <!-- 04 · MOMENTO DO APORTE -->
+      <section class="slide com-controles" id="s-momento" role="tabpanel" aria-labelledby="aba-momento">
+        <header class="cabeca">
+          <div class="kicker">04 · Momento do aporte</div>
+          <h2 class="titulo" id="titulo-momento"></h2>
+        </header>
+        <div class="controles">
+          <div class="controle largo"><label class="rotulo" for="mom-emp">Empreendimento</label>
+            <span class="campo" style="display:flex"><select id="mom-emp" class="sel-emp"></select></span>
+          </div>
+          <div class="controle">
+            <div class="deslizante">
+              <div class="topo"><label class="rotulo" for="mom-duracao">Duração do aporte</label><span class="valor" id="mom-duracao-valor"></span></div>
+              <input type="range" id="mom-duracao" min="1" max="30" step="1">
+              <div class="topo"><span class="ref">Clique numa barra para escolher o ano de início</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="kpis" id="k-momento"></div>
+        <div class="corpo">
+          <figure class="fig">
+            <figcaption class="fig-cab"><b>Aporte anual conforme o ano em que o Estado começa a pagar</b><span id="cab-momento"></span>
+              <span class="legenda"><span><i class="amostra" style="background:var(--azul)"></i>Início escolhido</span><span><i class="amostra" style="background:var(--azul-claro)"></i>Outros inícios</span></span>
+            </figcaption>
+            <div class="grafico" id="g-momento"></div>
+          </figure>
+          <aside class="lado" id="lado-momento"></aside>
+        </div>
+        <footer class="rodape"><span class="rodape-fonte"></span><span class="rodape-premissas"></span></footer>
+      </section>
+
+      <!-- 05 · RANKING -->
+      <section class="slide com-controles" id="s-ranking" role="tabpanel" aria-labelledby="aba-ranking">
+        <header class="cabeca">
+          <div class="kicker">05 · Ranking de empreendimentos</div>
+          <h2 class="titulo" id="titulo-ranking"></h2>
+        </header>
+        <div class="controles">
+          <div class="controle"><span class="rotulo">Setor</span>
+            <span class="segmentado" id="rk-setor" role="group" aria-label="Filtrar por setor"></span>
+          </div>
+          <div class="controle"><label class="rotulo" for="rk-intervencao">Intervenção</label>
+            <span class="campo"><select id="rk-intervencao" style="max-width:360px"></select></span>
+          </div>
+          <div class="controle"><label class="rotulo" for="rk-teto">Aporte anual até</label>
+            <span class="campo"><input type="number" id="rk-teto" min="0" step="10" placeholder="sem teto" style="width:120px"><span class="u">R$ mi/ano</span></span>
+          </div>
+          <div class="controle"><label class="rotulo" for="rk-busca">Buscar</label>
+            <span class="campo"><input type="search" id="rk-busca" placeholder="nome ou id" style="width:260px; text-align:left"></span>
+          </div>
+          <div class="controle"><span class="rotulo">Anos do aporte</span>
+            <span class="campo"><input type="number" class="in-inicio" min="1" max="60" step="1"><span class="u">até</span><input type="number" class="in-fim" min="1" max="60" step="1"></span>
+          </div>
+        </div>
+        <div class="kpis" id="k-ranking"></div>
+        <div class="tabela-rolagem" id="tab-ranking"></div>
+        <footer class="rodape"><span class="rodape-fonte"></span><span class="rodape-premissas">Clique numa linha para abrir o empreendimento no simulador · clique no cabeçalho para ordenar</span></footer>
+      </section>
+
+    </div>
+    <div class="dica" id="dica" hidden></div>
+  </div>
+</div>
+
+<script type="application/json" id="dados">__DADOS_JSON__</script>
+<script>
+(function () {
+  "use strict";
+  const DADOS = JSON.parse(document.getElementById("dados").textContent);
+  const META = DADOS.meta;
+  const EMPS = DADOS.emps;
+  const POR_ID = new Map(EMPS.map(e => [e.id, e]));
+
+  // ---------------------------------------------------------------- cálculo (mesmo do contraprestacao.py)
+  // <calc>
+  function vpl(taxa, fluxos) {
+    // igual ao numpy_financial.npv: o primeiro fluxo é t = 0 (não descontado)
+    let s = 0;
+    for (let t = 0; t < fluxos.length; t++) s += fluxos[t] / Math.pow(1 + taxa, t);
+    return s;
+  }
+  function tirm(fluxos, taxaFin, taxaReinv) {
+    // igual ao numpy_financial.mirr
+    const n = fluxos.length;
+    const pos = fluxos.map(v => (v > 0 ? v : 0));
+    const neg = fluxos.map(v => (v < 0 ? v : 0));
+    if (!pos.some(v => v > 0) || !neg.some(v => v < 0)) return NaN;
+    const numer = Math.abs(vpl(taxaReinv, pos));
+    const denom = Math.abs(vpl(taxaFin, neg));
+    return Math.pow(numer / denom, 1 / (n - 1)) * (1 + taxaReinv) - 1;
+  }
+  function somaFatores(taxa, inicio, fim) {
+    let s = 0;
+    for (let t = inicio - 1; t <= fim - 1; t++) s += 1 / Math.pow(1 + taxa, t);
+    return s;
+  }
+  function contraprestacao(fluxos, inicio, fim, taxa, taxaFin, taxaReinv) {
+    if (fim > fluxos.length) return { erro: `A concessão tem só ${fluxos.length} anos.` };
+    const vplOriginal = vpl(taxa, fluxos);
+    const fator = somaFatores(taxa, inicio, fim);
+    const anual = vplOriginal < 0 ? -vplOriginal / fator : 0;
+    const fluxoNovo = fluxos.slice();
+    for (let t = inicio - 1; t <= fim - 1; t++) fluxoNovo[t] += anual;
+    return {
+      vplOriginal, anual, fator,
+      tirmOriginal: tirm(fluxos, taxaFin, taxaReinv),
+      total: anual * (fim - inicio + 1),
+      vp: anual * fator,
+      vplNovo: vpl(taxa, fluxoNovo),
+      tirmNova: tirm(fluxoNovo, taxaFin, taxaReinv),
+      fluxoNovo
+    };
+  }
+  // </calc>
+
+  // ---------------------------------------------------------------- estado
+  const ESTADO_PADRAO_TAXA = META.taxa_desconto;
+  const estado = {
+    taxa: META.taxa_desconto,
+    inicio: 1,
+    fim: 5,
+    emp: (POR_ID.has(11) ? 11 : EMPS[0].id),
+    aba: 0,
+    filtro: { setor: "Todos", intervencao: "", busca: "", teto: null },
+    ordem: { col: "anual", asc: true }
+  };
+  function calcular(emp, inicio, fim) {
+    return contraprestacao(emp.fluxo, inicio ?? estado.inicio, fim ?? estado.fim, estado.taxa, META.taxa_financiamento, META.taxa_reinvestimento);
+  }
+
+  // ---------------------------------------------------------------- formatação
+  const nf = d => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  function moeda(v, d) {
+    if (v == null || !isFinite(v)) return "—";
+    const a = Math.abs(v), s = v < 0 ? "−" : "";
+    if (a >= 1e9) return `${s}R$ ${nf(d ?? 2).format(a / 1e9)} bi`;
+    if (a >= 1e6) return `${s}R$ ${nf(d ?? 1).format(a / 1e6)} mi`;
+    if (a >= 1e3) return `${s}R$ ${nf(0).format(a / 1e3)} mil`;
+    return `${s}R$ ${nf(0).format(a)}`;
+  }
+  function moedaCurta(v) {
+    const a = Math.abs(v), s = v < 0 ? "−" : "";
+    if (a >= 1e9) return `${s}${nf(a >= 1e10 ? 0 : 1).format(a / 1e9)} bi`;
+    if (a >= 1e6) return `${s}${nf(0).format(a / 1e6)} mi`;
+    if (a >= 1e3) return `${s}${nf(0).format(a / 1e3)} mil`;
+    return `${s}${nf(0).format(a)}`;
+  }
+  const pct = (v, d = 2) => (v == null || !isFinite(v) ? "—" : `${nf(d).format(v * 100)}%`);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const corSetor = s => (s.startsWith("Rodo") ? "var(--setor-rodo)" : s.startsWith("Ferro") ? "var(--setor-ferro)" : "var(--setor-hidro)");
+
+  // ---------------------------------------------------------------- SVG
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, pai) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
+    if (pai) pai.appendChild(e);
+    return e;
+  }
+  function texto(pai, x, y, str, cls, attrs) {
+    const t = el("text", Object.assign({ x, y, class: cls }, attrs || {}), pai);
+    t.textContent = str;
+    return t;
+  }
+  function novoSvg(id) {
+    const cont = document.getElementById(id);
+    cont.innerHTML = "";
+    const W = Math.max(cont.clientWidth, 200), H = Math.max(cont.clientHeight, 160);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H }, cont);
+    return { svg, W, H };
+  }
+  function ticks(min, max, n) {
+    if (min === max) { max = min + 1; }
+    const passoBruto = (max - min) / n;
+    const mag = Math.pow(10, Math.floor(Math.log10(passoBruto)));
+    const passo = [1, 2, 2.5, 5, 10].map(k => k * mag).find(p => p >= passoBruto);
+    const ini = Math.floor(min / passo) * passo, fim = Math.ceil(max / passo) * passo;
+    const out = [];
+    for (let v = ini; v <= fim + passo / 2; v += passo) out.push(+v.toPrecision(12));
+    return out;
+  }
+  const escalaLinear = (d0, d1, r0, r1) => v => r0 + ((v - d0) / (d1 - d0)) * (r1 - r0);
+
+  // dica
+  const dica = document.getElementById("dica");
+  const palco = document.getElementById("palco");
+  let escala = 1;
+  function mostrarDica(evento, html) {
+    const r = palco.getBoundingClientRect();
+    dica.innerHTML = html;
+    dica.hidden = false;
+    dica.style.left = `${(evento.clientX - r.left) / escala}px`;
+    dica.style.top = `${(evento.clientY - r.top) / escala}px`;
+  }
+  function esconderDica() { dica.hidden = true; }
+  function marcar(grupo, html, aoClicar) {
+    grupo.classList.add("alvo");
+    grupo.addEventListener("mousemove", ev => mostrarDica(ev, html()));
+    grupo.addEventListener("mouseleave", esconderDica);
+    if (aoClicar) grupo.addEventListener("click", aoClicar);
+  }
+
+  // ---------------------------------------------------------------- controles compartilhados
+  function rotuloEmp(e) { return `${e.id} · ${e.nome}`; }
+  function preencherSelects() {
+    const setores = [...new Set(EMPS.map(e => e.setor))].sort();
+    document.querySelectorAll(".sel-emp").forEach(sel => {
+      sel.innerHTML = setores.map(s => `<optgroup label="${esc(s)}">` +
+        EMPS.filter(e => e.setor === s).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+          .map(e => `<option value="${e.id}">${esc(rotuloEmp(e))}</option>`).join("") + "</optgroup>").join("");
+      sel.addEventListener("change", () => { estado.emp = +sel.value; atualizar(); });
+    });
+  }
+  function limitarAnos() {
+    const n = POR_ID.get(estado.emp).fluxo.length;
+    estado.inicio = Math.max(1, Math.min(estado.inicio, 60));
+    estado.fim = Math.max(estado.inicio, Math.min(estado.fim, 60));
+    return n;
+  }
+  function ligarAnos() {
+    document.querySelectorAll(".in-inicio, .in-fim").forEach(inp => {
+      inp.addEventListener("change", () => {
+        const v = parseInt(inp.value, 10);
+        if (!isFinite(v)) { atualizar(); return; }
+        const duracao = estado.fim - estado.inicio;
+        if (inp.classList.contains("in-inicio")) { estado.inicio = Math.max(1, v); if (estado.fim < estado.inicio) estado.fim = estado.inicio + duracao; }
+        else { estado.fim = Math.max(1, v); if (estado.inicio > estado.fim) estado.inicio = estado.fim; }
+        atualizar();
+      });
+    });
+  }
+  function sincronizarControles() {
+    document.querySelectorAll(".in-inicio").forEach(i => { i.value = estado.inicio; });
+    document.querySelectorAll(".in-fim").forEach(i => { i.value = estado.fim; });
+    document.querySelectorAll(".sel-emp").forEach(s => { s.value = String(estado.emp); });
+    const taxa = document.getElementById("c-taxa");
+    taxa.value = estado.taxa;
+    taxa.style.setProperty("--cheio", `${((estado.taxa - taxa.min) / (taxa.max - taxa.min)) * 100}%`);
+    document.getElementById("c-taxa-valor").textContent = `${pct(estado.taxa)} a.a.`;
+    document.getElementById("c-taxa-ref").textContent = `Padrão do modelo: ${pct(ESTADO_PADRAO_TAXA)} a.a.`;
+    const dur = document.getElementById("mom-duracao");
+    const n = POR_ID.get(estado.emp).fluxo.length;
+    dur.max = n;
+    dur.value = estado.fim - estado.inicio + 1;
+    dur.style.setProperty("--cheio", `${((dur.value - 1) / Math.max(1, n - 1)) * 100}%`);
+    document.getElementById("mom-duracao-valor").textContent = `${dur.value} ${dur.value == 1 ? "ano" : "anos"}`;
+    const chip = document.getElementById("chip-taxa");
+    chip.textContent = `taxa ${pct(estado.taxa)} · anos ${estado.inicio}–${estado.fim}`;
+    chip.className = "chip" + (Math.abs(estado.taxa - ESTADO_PADRAO_TAXA) > 1e-9 ? " alerta" : " ok");
+    const premissas = `Desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo`;
+    document.querySelectorAll(".rodape-premissas").forEach((s, i, todos) => { if (i < todos.length - 1) s.textContent = premissas; });
+    const fonte = `Fonte: PELT-MG, carteira recomendada (cenário 10)` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
+    document.querySelectorAll(".rodape-fonte").forEach(s => { s.textContent = fonte; });
+  }
+  function kpis(id, itens) {
+    document.getElementById(id).innerHTML = itens.map(k =>
+      `<div class="kpi"><div class="v ${k.cor || ""}">${k.v}</div><div class="r">${k.r}</div><div class="s">${k.s || ""}</div></div>`).join("");
+  }
+
+  // ---------------------------------------------------------------- carteira (resultados de todos)
+  function carteira() {
+    return EMPS.map(e => {
+      const r = calcular(e);
+      return Object.assign({ emp: e }, r);
+    });
+  }
+
+  // ---------------------------------------------------------------- 01 · visão geral
+  function desenharVisao() {
+    const todos = carteira();
+    const validos = todos.filter(r => !r.erro);
+    const negativos = validos.filter(r => r.vplOriginal < 0);
+    const somaVpl = negativos.reduce((s, r) => s + r.vplOriginal, 0);
+    const anuais = negativos.map(r => r.anual).sort((a, b) => a - b);
+    const mediana = anuais.length ? anuais[Math.floor(anuais.length / 2)] : NaN;
+    const ate100 = anuais.filter(v => v <= 100e6).length;
+    const foraIntervalo = todos.length - validos.length;
+
+    document.getElementById("titulo-visao").textContent =
+      `${negativos.length} de ${validos.length} empreendimentos precisam de aporte do Estado para a VPL chegar a zero`;
+    kpis("k-visao", [
+      { v: String(validos.length), r: "Empreendimentos com fluxo de caixa", s: foraIntervalo ? `${foraIntervalo} fora do intervalo ${estado.inicio}–${estado.fim}` : "carteira recomendada" },
+      { v: String(negativos.length), r: "Com VPL negativa", s: `${pct(negativos.length / Math.max(1, validos.length), 0)} da carteira`, cor: "laranja" },
+      { v: moeda(mediana), r: "Aporte anual mediano", s: `anos ${estado.inicio} a ${estado.fim}`, cor: "azul" },
+      { v: String(ate100), r: "Precisam de até R$ 100 mi/ano", s: `nos anos ${estado.inicio} a ${estado.fim}` }
+    ]);
+    document.getElementById("cab-visao").textContent = `anos ${estado.inicio}–${estado.fim}, do menor para o maior · escala logarítmica`;
+
+    const porSetor = {};
+    negativos.forEach(r => { (porSetor[r.emp.setor] = porSetor[r.emp.setor] || []).push(r); });
+    document.getElementById("lado-visao").innerHTML = `
+      <div class="bloco"><h3>A pergunta</h3>
+        <p>Quanto o Estado precisa pagar por ano, num período escolhido da concessão, para que cada empreendimento deixe de dar prejuízo ao investidor (VPL = 0)?</p></div>
+      <div class="bloco"><h3>VPL negativa somada</h3>
+        <p><span class="forte laranja-t num">${moeda(somaVpl)}</span> em valor presente — é o quanto falta, hoje, para zerar todos os ${negativos.length}.</p></div>
+      <div class="bloco"><h3>Por setor</h3>
+        ${Object.keys(porSetor).sort().map(s => {
+          const lista = porSetor[s]; const soma = lista.reduce((a, r) => a + r.anual, 0);
+          return `<p><span class="amostra" style="background:${corSetor(s)}; margin-right:8px"></span>${esc(s)}: <span class="forte num">${lista.length}</span> empreendimentos · <span class="num">${moeda(soma)}</span>/ano</p>`;
+        }).join("")}</div>
+      <p class="nota">Passe o mouse nas barras para ver o empreendimento; clique para abrir no simulador. Os anos do aporte podem ser trocados nas abas 02, 03 e 05.</p>`;
+
+    // gráfico: barras ordenadas, escala log
+    const { svg, W, H } = novoSvg("g-visao");
+    const m = { t: 16, d: 12, b: 34, e: 84 };
+    const dados = negativos.slice().sort((a, b) => a.anual - b.anual);
+    if (!dados.length) return;
+    const minV = Math.max(1e5, dados[0].anual), maxV = dados[dados.length - 1].anual;
+    const lmin = Math.floor(Math.log10(minV)), lmax = Math.ceil(Math.log10(maxV));
+    const y = v => H - m.b - ((Math.log10(Math.max(v, Math.pow(10, lmin))) - lmin) / (lmax - lmin)) * (H - m.t - m.b);
+    for (let p = lmin; p <= lmax; p++) {
+      const v = Math.pow(10, p);
+      el("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--grade)" }, svg);
+      texto(svg, m.e - 12, y(v) + 5, moedaCurta(v), "gm", { "text-anchor": "end" });
+    }
+    const banda = (W - m.e - m.d) / dados.length;
+    dados.forEach((r, i) => {
+      const x = m.e + i * banda;
+      const g = el("g", null, svg);
+      el("rect", { x, y: m.t, width: banda, height: H - m.t - m.b, fill: "transparent" }, g);
+      el("rect", { class: "marca", x: x + banda * 0.12, y: y(r.anual), width: Math.max(1, banda * 0.76), height: H - m.b - y(r.anual), fill: corSetor(r.emp.setor), rx: 1 }, g);
+      marcar(g, () => `<span class="m">${r.emp.id} · ${esc(r.emp.setor)}</span><span>${esc(r.emp.nome)}</span><strong>${moeda(r.anual)}/ano</strong><span class="m">VPL ${moeda(r.vplOriginal)}</span>`,
+        () => { estado.emp = r.emp.id; irPara(2); atualizar(); });
+    });
+    texto(svg, m.e, H - 8, `${dados.length} empreendimentos com VPL negativa`, "gm");
+  }
+
+  // ---------------------------------------------------------------- 02 · como calculamos
+  function desenharCalculo() {
+    const n = 30;
+    const r = estado.taxa;
+    const fator = t => 1 / Math.pow(1 + r, t - 1);
+    const inicio = Math.min(estado.inicio, n), fim = Math.min(estado.fim, n);
+    const soma = somaFatores(r, inicio, fim);
+    const dur = fim - inicio + 1;
+    const exemploVpl = 1e9;
+    const anualEx = exemploVpl / soma;
+    const somaCedo = somaFatores(r, 1, dur), somaTarde = somaFatores(r, 1 + 10, dur + 10);
+
+    kpis("k-calculo", [
+      { v: `${pct(r)}`, r: "Taxa de desconto ao ano", s: "valor do dinheiro no tempo" },
+      { v: `R$ ${nf(2).format(fator(5))}`, r: "R$ 1,00 do ano 5 vale hoje", s: `perde ${pct(1 - fator(5), 0)} em 4 anos` },
+      { v: `R$ ${nf(2).format(fator(10))}`, r: "R$ 1,00 do ano 10 vale hoje", s: `perde ${pct(1 - fator(10), 0)} em 9 anos` },
+      { v: nf(3).format(soma), r: `Soma dos fatores, anos ${inicio}–${fim}`, s: `${dur} pagamentos de R$ 1,00 valem R$ ${nf(2).format(soma)} hoje`, cor: "azul" }
+    ]);
+
+    document.getElementById("lado-calculo").innerHTML = `
+      <ol class="passos">
+        <li><div><b>Trazer o fluxo para hoje</b><span class="det">Receitas e custo (CAPEX + OPEX, no ano 1) divididos por (1 + ${pct(r)})<sup>ano − 1</sup>. A soma é a VPL: desconta a perda de valor da moeda e o custo de oportunidade.</span></div></li>
+        <li><div><b>VPL negativa = o que falta</b><span class="det">Em reais de hoje, é o que o investidor perderia. O aporte cobre exatamente isso.</span></div></li>
+        <li><div><b>Dividir pelos fatores dos anos do aporte</b><span class="det">Cada real futuro vale menos, então o Estado paga mais em valor nominal.</span></div></li>
+      </ol>
+      <div class="formula">aporte anual <span class="op">=</span> |VPL| <span class="op">÷</span> Σ fatores<br><span class="op">=</span> ${moeda(exemploVpl)} <span class="op">÷</span> ${nf(3).format(soma)} <span class="op">=</span> <span class="azul-t">${moeda(anualEx)}</span></div>
+      <p class="nota">Exemplo com VPL de −R$ 1 bi. Se os mesmos ${dur} ${dur === 1 ? "ano" : "anos"} começassem no ano 11, o aporte seria <b>${moeda(exemploVpl / somaTarde)}</b>/ano (${nf(2).format(somaCedo / somaTarde)}× mais) — veja a aba 04.</p>`;
+
+    const { svg, W, H } = novoSvg("g-calculo");
+    const m = { t: 30, d: 12, b: 40, e: 64 };
+    const y = escalaLinear(0, 1, H - m.b, m.t);
+    [0, 0.25, 0.5, 0.75, 1].forEach(v => {
+      el("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--grade)" }, svg);
+      texto(svg, m.e - 12, y(v) + 5, `R$ ${nf(2).format(v)}`, "gm", { "text-anchor": "end" });
+    });
+    const banda = (W - m.e - m.d) / n;
+    for (let t = 1; t <= n; t++) {
+      const f = fator(t), x = m.e + (t - 1) * banda, ativo = t >= inicio && t <= fim;
+      const g = el("g", null, svg);
+      el("rect", { x, y: m.t, width: banda, height: H - m.t - m.b, fill: "transparent" }, g);
+      el("rect", { class: "marca", x: x + banda * 0.15, y: y(f), width: banda * 0.7, height: y(0) - y(f), fill: ativo ? "var(--azul)" : "var(--cinza)", rx: 2 }, g);
+      if (t === 1 || t % 5 === 0) texto(svg, x + banda / 2, H - m.b + 24, String(t), "gm", { "text-anchor": "middle" });
+      if (ativo && (fim - inicio < 8)) texto(svg, x + banda / 2, y(f) - 8, nf(2).format(f), "gp", { "text-anchor": "middle" });
+      marcar(g, () => `<span class="m">ano ${t} da concessão</span><strong>R$ ${nf(4).format(f)}</strong><span>é quanto vale hoje R$ 1,00 recebido nesse ano</span>`,
+        () => { const d = estado.fim - estado.inicio; estado.inicio = t; estado.fim = t + d; atualizar(); });
+    }
+  }
+
+  // ---------------------------------------------------------------- 03 · simulador
+  function desenharSimulador() {
+    const e = POR_ID.get(estado.emp);
+    const n = e.fluxo.length;
+    const r = calcular(e);
+    document.getElementById("sim-anos-civis").textContent = r.erro ? `concessão de ${n} anos` : `${e.ano0 + estado.inicio - 1}–${e.ano0 + estado.fim - 1} · concessão de ${n} anos`;
+
+    if (r.erro) {
+      document.getElementById("titulo-simulador").textContent = `Intervalo inválido: ${r.erro} Escolha anos entre 1 e ${n}.`;
+      kpis("k-simulador", [{ v: "—", r: "VPL sem aporte" }, { v: "—", r: "Aporte anual" }, { v: "—", r: "Total" }, { v: "—", r: "TIRM" }]);
+      document.getElementById("lado-simulador").innerHTML = `<p>${esc(e.nome)}</p><p class="nota laranja-t">${esc(r.erro)}</p>`;
+      novoSvg("g-sim-vpl"); novoSvg("g-sim-entradas");
+      return;
+    }
+    const precisa = r.vplOriginal < 0;
+    document.getElementById("titulo-simulador").textContent = precisa
+      ? `O Estado precisaria aportar ${moeda(r.anual)} por ano, de ${e.ano0 + estado.inicio - 1} a ${e.ano0 + estado.fim - 1}, para zerar a VPL`
+      : `Este empreendimento já tem VPL positiva: não precisa de contraprestação`;
+    kpis("k-simulador", [
+      { v: moeda(r.vplOriginal), r: "VPL sem aporte", s: `a ${pct(estado.taxa)} a.a.`, cor: r.vplOriginal < 0 ? "laranja" : "" },
+      { v: moeda(r.anual), r: "Aporte anual do Estado", s: `anos ${estado.inicio} a ${estado.fim} da concessão`, cor: "azul" },
+      { v: moeda(r.total), r: "Total pago (nominal)", s: `em valor presente: ${moeda(r.vp)}` },
+      { v: `${pct(r.tirmOriginal)} → ${pct(r.tirmNova)}`, r: "TIRM antes → depois", s: `VPL com aporte: ${moeda(Math.abs(r.vplNovo) < 1 ? 0 : r.vplNovo)}` }
+    ]);
+    const receitaTotal = e.receita.reduce((a, b) => a + b, 0);
+    document.getElementById("lado-simulador").innerHTML = `
+      <div class="bloco"><h3>Empreendimento ${e.id}</h3><p class="forte">${esc(e.nome)}</p>
+        <p class="nota">${esc(e.setor)} · ${esc(e.intervencao || "")}</p></div>
+      <div class="bloco"><h3>Fluxo de caixa</h3>
+        <p>Custo no ano 1 (${e.ano0}): <span class="forte num">${moeda(e.custo)}</span> <span class="nota">CAPEX ${moeda(e.capex)} · OPEX ${moeda(e.opex)}</span></p>
+        <p>Receita em ${n} anos: <span class="forte num">${moeda(receitaTotal)}</span> (nominal)</p></div>
+      <div class="bloco"><h3>Leitura</h3>${precisa
+        ? `<p>Trazidos a hoje, faltam <span class="forte laranja-t num">${moeda(-r.vplOriginal)}</span>. O Estado paga <span class="forte azul-t num">${moeda(r.anual)}</span> por ano durante ${estado.fim - estado.inicio + 1} anos (${moeda(r.total)} no total), que valem exatamente isso hoje.</p>
+           <p class="nota">Aporte total = ${pct(r.total / e.custo, 0)} do custo do empreendimento.</p>`
+        : `<p>A VPL já é positiva (${moeda(r.vplOriginal)}) a ${pct(estado.taxa)} a.a.</p>`}</div>`;
+
+    // VPL acumulada
+    const acum = f => { let s = 0; return f.map((v, t) => (s += v / Math.pow(1 + estado.taxa, t))); };
+    const semAporte = acum(e.fluxo), comAporte = acum(r.fluxoNovo);
+    {
+      const { svg, W, H } = novoSvg("g-sim-vpl");
+      const m = { t: 18, d: 20, b: 34, e: 92 };
+      const valores = semAporte.concat(comAporte, [0]);
+      const tk = ticks(Math.min(...valores), Math.max(...valores), 5);
+      const y = escalaLinear(tk[0], tk[tk.length - 1], H - m.b, m.t);
+      const x = escalaLinear(0, n - 1, m.e, W - m.d);
+      tk.forEach(v => {
+        el("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--eixo)" : "var(--grade)", "stroke-width": v === 0 ? 1.5 : 1 }, svg);
+        texto(svg, m.e - 12, y(v) + 5, moedaCurta(v), "gm", { "text-anchor": "end" });
+      });
+      if (!r.erro && precisa) el("rect", { x: x(estado.inicio - 1) - 6, y: m.t, width: x(estado.fim - 1) - x(estado.inicio - 1) + 12, height: H - m.t - m.b, fill: "var(--azul-lavado)", rx: 4 }, svg);
+      const caminho = arr => arr.map((v, t) => `${t ? "L" : "M"}${x(t)},${y(v)}`).join("");
+      el("path", { d: caminho(semAporte), fill: "none", stroke: "var(--laranja)", "stroke-width": 2.5, "stroke-dasharray": "7 5" }, svg);
+      el("path", { d: caminho(comAporte), fill: "none", stroke: "var(--azul)", "stroke-width": 3 }, svg);
+      texto(svg, x(n - 1), y(semAporte[n - 1]) + (semAporte[n - 1] < comAporte[n - 1] ? 22 : -10), `VPL ${moeda(semAporte[n - 1])}`, "gp gf", { "text-anchor": "end" });
+      texto(svg, x(n - 1), y(comAporte[n - 1]) - 10, `VPL ${moeda(Math.abs(comAporte[n - 1]) < 1 ? 0 : comAporte[n - 1])}`, "g gf", { "text-anchor": "end", fill: "var(--azul)" });
+      for (let t = 0; t < n; t++) {
+        if (t === 0 || (t + 1) % 5 === 0) texto(svg, x(t), H - m.b + 24, String(e.ano0 + t), "gm", { "text-anchor": "middle" });
+        const g = el("g", null, svg);
+        el("rect", { x: x(t) - (W - m.e - m.d) / n / 2, y: m.t, width: (W - m.e - m.d) / n, height: H - m.t - m.b, fill: "transparent" }, g);
+        marcar(g, () => `<span class="m">ano ${t + 1} · ${e.ano0 + t}</span><span>Sem aporte: <b>${moeda(semAporte[t])}</b></span><span>Com aporte: <b class="azul-t">${moeda(comAporte[t])}</b></span>`);
+      }
+    }
+    // entradas anuais
+    {
+      const { svg, W, H } = novoSvg("g-sim-entradas");
+      const m = { t: 12, d: 20, b: 34, e: 92 };
+      const aporte = e.fluxo.map((_, t) => (t >= estado.inicio - 1 && t <= estado.fim - 1 ? r.anual : 0));
+      const tk = ticks(0, Math.max(...e.receita.map((v, t) => Math.max(0, v) + aporte[t])), 4);
+      const y = escalaLinear(0, tk[tk.length - 1], H - m.b, m.t);
+      tk.forEach(v => {
+        el("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--grade)" }, svg);
+        texto(svg, m.e - 12, y(v) + 5, moedaCurta(v), "gm", { "text-anchor": "end" });
+      });
+      const banda = (W - m.e - m.d) / n;
+      for (let t = 0; t < n; t++) {
+        const x0 = m.e + t * banda, rec = Math.max(0, e.receita[t]);
+        const g = el("g", null, svg);
+        el("rect", { x: x0, y: m.t, width: banda, height: H - m.t - m.b, fill: "transparent" }, g);
+        el("rect", { class: "marca", x: x0 + banda * 0.15, y: y(rec), width: banda * 0.7, height: y(0) - y(rec), fill: "var(--cinza)" }, g);
+        if (aporte[t] > 0) el("rect", { class: "marca", x: x0 + banda * 0.15, y: y(rec + aporte[t]), width: banda * 0.7, height: y(rec) - y(rec + aporte[t]), fill: "var(--azul)", rx: 2 }, g);
+        if (t === 0 || (t + 1) % 5 === 0) texto(svg, x0 + banda / 2, H - m.b + 24, String(e.ano0 + t), "gm", { "text-anchor": "middle" });
+        marcar(g, () => `<span class="m">ano ${t + 1} · ${e.ano0 + t}</span><span>Receita: <b>${moeda(e.receita[t])}</b></span>${aporte[t] > 0 ? `<span>Aporte: <b class="azul-t">${moeda(aporte[t])}</b></span>` : ""}`);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- 04 · momento do aporte
+  function desenharMomento() {
+    const e = POR_ID.get(estado.emp);
+    const n = e.fluxo.length;
+    const dur = Math.min(estado.fim - estado.inicio + 1, n);
+    const v0 = vpl(estado.taxa, e.fluxo);
+    const inicios = [];
+    for (let s = 1; s + dur - 1 <= n; s++) inicios.push({ s, anual: v0 < 0 ? -v0 / somaFatores(estado.taxa, s, s + dur - 1) : 0 });
+    const atual = inicios.find(i => i.s === estado.inicio);
+    const primeiro = inicios[0], ultimo = inicios[inicios.length - 1];
+
+    document.getElementById("titulo-momento").textContent = v0 >= 0
+      ? "Este empreendimento já tem VPL positiva: não precisa de contraprestação"
+      : `Cada ano de atraso no início do aporte aumenta o pagamento anual em cerca de ${pct(estado.taxa, 1)}`;
+    document.getElementById("cab-momento").textContent = `${e.id} · ${dur} ${dur === 1 ? "ano" : "anos"} de aporte · VPL ${moeda(v0)}`;
+    kpis("k-momento", [
+      { v: moeda(primeiro.anual), r: "Começando no ano 1", s: `${e.ano0}–${e.ano0 + dur - 1} · total ${moeda(primeiro.anual * dur)}` },
+      { v: atual ? moeda(atual.anual) : "—", r: `Começando no ano ${estado.inicio}`, s: atual ? `${e.ano0 + estado.inicio - 1}–${e.ano0 + estado.inicio + dur - 2} · total ${moeda(atual.anual * dur)}` : "fora da concessão", cor: "azul" },
+      { v: moeda(ultimo.anual), r: `Começando no ano ${ultimo.s} (último possível)`, s: `total ${moeda(ultimo.anual * dur)}` },
+      { v: primeiro.anual > 0 ? `${nf(1).format(ultimo.anual / primeiro.anual)}×` : "—", r: "Último ÷ primeiro", s: "mesmo valor presente em todos" }
+    ]);
+    document.getElementById("lado-momento").innerHTML = `
+      <div class="bloco"><h3>Por que cresce</h3>
+        <p>Todas as barras têm o <b>mesmo valor presente</b>: ${moeda(-Math.min(0, v0))}. Pagar mais tarde significa pagar com reais que valem menos hoje — então é preciso pagar mais deles.</p></div>
+      <div class="bloco"><h3>Regra de bolso</h3>
+        <p>Adiar o início em 1 ano multiplica o aporte anual por (1 + taxa) = <span class="forte num">${nf(4).format(1 + estado.taxa)}</span>.</p></div>
+      <div class="bloco"><h3>Trade-off para o Estado</h3>
+        <p class="nota">Começar cedo exige menos dinheiro no total, mas pesa no orçamento dos primeiros anos. Começar tarde alivia o caixa de agora, a um custo nominal maior.</p></div>`;
+
+    const { svg, W, H } = novoSvg("g-momento");
+    const m = { t: 30, d: 12, b: 40, e: 92 };
+    const tk = ticks(0, Math.max(...inicios.map(i => i.anual), 1), 5);
+    const y = escalaLinear(0, tk[tk.length - 1], H - m.b, m.t);
+    tk.forEach(v => {
+      el("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--grade)" }, svg);
+      texto(svg, m.e - 12, y(v) + 5, moedaCurta(v), "gm", { "text-anchor": "end" });
+    });
+    const banda = (W - m.e - m.d) / inicios.length;
+    inicios.forEach((i, k) => {
+      const x = m.e + k * banda, ativo = i.s === estado.inicio;
+      const g = el("g", null, svg);
+      el("rect", { x, y: m.t, width: banda, height: H - m.t - m.b, fill: "transparent" }, g);
+      el("rect", { class: "marca", x: x + banda * 0.15, y: y(i.anual), width: banda * 0.7, height: y(0) - y(i.anual), fill: ativo ? "var(--azul)" : "var(--azul-claro)", rx: 2 }, g);
+      if (ativo) texto(svg, x + banda / 2, y(i.anual) - 10, moeda(i.anual), "g gf", { "text-anchor": "middle" });
+      if (i.s === 1 || i.s % 5 === 0) texto(svg, x + banda / 2, H - m.b + 24, String(i.s), "gm", { "text-anchor": "middle" });
+      marcar(g, () => `<span class="m">início no ano ${i.s} · ${e.ano0 + i.s - 1}</span><strong>${moeda(i.anual)}/ano</strong><span>total ${moeda(i.anual * dur)}</span>`,
+        () => { estado.inicio = i.s; estado.fim = i.s + dur - 1; atualizar(); });
+    });
+  }
+
+  // ---------------------------------------------------------------- 05 · ranking
+  const COLUNAS = [
+    { id: "pos", rot: "#", n: true, val: (r, i) => i + 1, fmt: (v) => v, ordena: false },
+    { id: "nome", rot: "Empreendimento", val: r => r.emp.nome, fmt: (v, r) => `${esc(v)}<span class="sub2">${r.emp.id} · ${esc(r.emp.setor)} · ${esc(r.emp.intervencao || "")}</span>`, cls: "nome" },
+    { id: "anos", rot: "Anos", n: true, val: r => r.emp.fluxo.length, fmt: v => v },
+    { id: "vpl", rot: "VPL", n: true, val: r => r.vplOriginal, fmt: v => moeda(v) },
+    { id: "tirm", rot: "TIRM", n: true, val: r => r.tirmOriginal, fmt: v => pct(v) },
+    { id: "anual", rot: "Aporte anual", n: true, val: r => r.anual, fmt: (v, r, max) => `<b>${moeda(v)}</b><span class="barrinha" style="width:${Math.max(1, 90 * Math.log10(1 + v / 1e6) / Math.log10(1 + max / 1e6))}px"></span>` },
+    { id: "total", rot: "Total nominal", n: true, val: r => r.total, fmt: v => moeda(v) },
+    { id: "custo", rot: "Aporte ÷ custo", n: true, val: r => r.total / r.emp.custo, fmt: v => pct(v, 0) },
+    { id: "tirmNova", rot: "TIRM c/ aporte", n: true, val: r => r.tirmNova, fmt: v => pct(v) }
+  ];
+  function desenharRanking() {
+    const f = estado.filtro;
+    const seg = document.getElementById("rk-setor");
+    const setores = ["Todos", ...new Set(EMPS.map(e => e.setor))];
+    seg.innerHTML = setores.map(s => `<button type="button" data-setor="${esc(s)}" aria-pressed="${s === f.setor}">${esc(s)}</button>`).join("");
+    seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { f.setor = b.dataset.setor; desenharRanking(); }));
+
+    const selInt = document.getElementById("rk-intervencao");
+    if (!selInt.options.length) {
+      const ints = [...new Set(EMPS.map(e => e.intervencao).filter(Boolean))].sort();
+      selInt.innerHTML = `<option value="">Todas</option>` + ints.map(i => `<option>${esc(i)}</option>`).join("");
+      selInt.addEventListener("change", () => { f.intervencao = selInt.value; desenharRanking(); });
+      document.getElementById("rk-teto").addEventListener("input", ev => { const v = parseFloat(ev.target.value); f.teto = isFinite(v) ? v * 1e6 : null; desenharRanking(); });
+      document.getElementById("rk-busca").addEventListener("input", ev => { f.busca = ev.target.value.trim().toLowerCase(); desenharRanking(); });
+    }
+
+    const todos = carteira().filter(r => !r.erro && r.vplOriginal < 0);
+    const filtrados = todos.filter(r =>
+      (f.setor === "Todos" || r.emp.setor === f.setor) &&
+      (!f.intervencao || r.emp.intervencao === f.intervencao) &&
+      (f.teto == null || r.anual <= f.teto) &&
+      (!f.busca || r.emp.nome.toLowerCase().includes(f.busca) || String(r.emp.id) === f.busca));
+    const col = COLUNAS.find(c => c.id === estado.ordem.col) || COLUNAS[5];
+    filtrados.sort((a, b) => {
+      const va = col.val(a), vb = col.val(b);
+      const cmp = typeof va === "string" ? va.localeCompare(vb, "pt-BR") : (isFinite(va) ? va : Infinity) - (isFinite(vb) ? vb : Infinity);
+      return estado.ordem.asc ? cmp : -cmp;
+    });
+    const somaAnual = filtrados.reduce((s, r) => s + r.anual, 0);
+    const maxAnual = Math.max(1, ...todos.map(r => r.anual));
+    const fora = carteira().filter(r => r.erro).length;
+
+    document.getElementById("titulo-ranking").textContent = filtrados.length
+      ? `${filtrados.length} empreendimentos no filtro — o mais barato precisa de ${moeda(Math.min(...filtrados.map(r => r.anual)))} por ano`
+      : "Nenhum empreendimento no filtro";
+    kpis("k-ranking", [
+      { v: String(filtrados.length), r: "Empreendimentos no filtro", s: `de ${todos.length} com VPL negativa` + (fora ? ` · ${fora} fora do intervalo` : "") },
+      { v: moeda(somaAnual), r: "Aporte anual somado", s: `anos ${estado.inicio} a ${estado.fim}`, cor: "azul" },
+      { v: moeda(somaAnual * (estado.fim - estado.inicio + 1)), r: "Total nominal somado", s: `${estado.fim - estado.inicio + 1} anos de aporte` },
+      { v: moeda(filtrados.reduce((s, r) => s - r.vplOriginal, 0)), r: "VPL negativa coberta", s: "em valor presente", cor: "laranja" }
+    ]);
+
+    const seta = c => (c.id === estado.ordem.col ? `<span class="seta-ordem">${estado.ordem.asc ? " ↑" : " ↓"}</span>` : "");
+    document.getElementById("tab-ranking").innerHTML = `<table class="t"><thead><tr>${COLUNAS.map(c => `<th class="${c.n ? "n" : ""}" data-col="${c.id}">${c.rot}${seta(c)}</th>`).join("")}</tr></thead><tbody>${
+      filtrados.map((r, i) => `<tr data-id="${r.emp.id}">${COLUNAS.map(c => `<td class="${c.n ? "n" : ""} ${c.cls || ""}">${c.fmt(c.val(r, i), r, maxAnual)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    document.querySelectorAll("#tab-ranking th").forEach(th => th.addEventListener("click", () => {
+      const c = COLUNAS.find(k => k.id === th.dataset.col);
+      if (c.ordena === false) return;
+      if (estado.ordem.col === c.id) estado.ordem.asc = !estado.ordem.asc; else { estado.ordem.col = c.id; estado.ordem.asc = c.id !== "vpl"; }
+      desenharRanking();
+    }));
+    document.querySelectorAll("#tab-ranking tbody tr").forEach(tr => tr.addEventListener("click", () => { estado.emp = +tr.dataset.id; irPara(2); atualizar(); }));
+  }
+
+  // ---------------------------------------------------------------- orquestração
+  const DESENHOS = [desenharVisao, desenharCalculo, desenharSimulador, desenharMomento, desenharRanking];
+  function atualizar() {
+    limitarAnos();
+    sincronizarControles();
+    DESENHOS.forEach(d => d());
+  }
+
+  document.getElementById("c-taxa").addEventListener("input", ev => { estado.taxa = parseFloat(ev.target.value); atualizar(); });
+  document.getElementById("c-taxa-padrao").addEventListener("click", () => { estado.taxa = ESTADO_PADRAO_TAXA; atualizar(); });
+  document.getElementById("mom-duracao").addEventListener("input", ev => {
+    const n = POR_ID.get(estado.emp).fluxo.length, d = parseInt(ev.target.value, 10);
+    estado.fim = estado.inicio + d - 1;
+    if (estado.fim > n) { estado.fim = n; estado.inicio = n - d + 1; }
+    atualizar();
+  });
+
+  // ---------------------------------------------------------------- abas, escala e navegação
+  const slides = [...document.querySelectorAll(".slide")];
+  const abas = [...document.querySelectorAll(".aba")];
+  const trilho = document.getElementById("trilho");
+  const consultaEstreita = window.matchMedia("(max-width: 760px)");
+  const NOMES_ABAS = ["visao", "calculo", "simulador", "momento", "ranking"];
+
+  function ajustarEscala() {
+    if (consultaEstreita.matches) { escala = 1; palco.style.transform = ""; trilho.style.transform = ""; return; }
+    const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
+    escala = Math.min(w / 1920, h / 1080);
+    const dx = (w - 1920 * escala) / 2, dy = (h - 1080 * escala) / 2;
+    palco.style.transform = `translate(${dx}px,${dy}px) scale(${escala})`;
+    trilho.style.transform = `translateX(${-1920 * estado.aba}px)`;
+  }
+  function irPara(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    estado.aba = i;
+    esconderDica();
+    slides.forEach((s, k) => { s.classList.toggle("ativo", k === i); if (k === i) s.removeAttribute("inert"); else s.setAttribute("inert", ""); });
+    abas.forEach((a, k) => { a.setAttribute("aria-selected", String(k === i)); a.tabIndex = k === i ? 0 : -1; });
+    document.getElementById("contador").textContent = `${i + 1} / ${slides.length}`;
+    document.getElementById("anterior").disabled = i === 0;
+    document.getElementById("proximo").disabled = i === slides.length - 1;
+    if (!consultaEstreita.matches) trilho.style.transform = `translateX(${-1920 * i}px)`;
+    else { DESENHOS[i](); window.scrollTo(0, 0); }
+    try { history.replaceState(null, "", "#" + NOMES_ABAS[i]); } catch (e) { /* sem histórico */ }
+  }
+  abas.forEach((a, k) => a.addEventListener("click", () => irPara(k)));
+  document.getElementById("anterior").addEventListener("click", () => irPara(estado.aba - 1));
+  document.getElementById("proximo").addEventListener("click", () => irPara(estado.aba + 1));
+  document.addEventListener("keydown", ev => {
+    if (ev.target && ev.target.closest && ev.target.closest("input, select, textarea")) return;
+    if (ev.key === "ArrowRight" || ev.key === "PageDown") { ev.preventDefault(); irPara(estado.aba + 1); }
+    else if (ev.key === "ArrowLeft" || ev.key === "PageUp") { ev.preventDefault(); irPara(estado.aba - 1); }
+    else if (ev.key === "f" || ev.key === "F") {
+      try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); } catch (e) { /* sem tela cheia */ }
+    }
+  });
+  let esperaRedimensionar = null;
+  window.addEventListener("resize", () => {
+    ajustarEscala();
+    clearTimeout(esperaRedimensionar);
+    esperaRedimensionar = setTimeout(atualizar, 200);
+  });
+
+  // ---------------------------------------------------------------- início
+  preencherSelects();
+  ligarAnos();
+  const inicial = NOMES_ABAS.indexOf(location.hash.slice(1));
+  estado.aba = inicial >= 0 ? inicial : 0;
+  ajustarEscala();
+  irPara(estado.aba);
+  atualizar();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(atualizar);
+})();
+</script>
+</body>
+</html>

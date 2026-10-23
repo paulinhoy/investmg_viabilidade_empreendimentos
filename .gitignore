@@ -17,3 +17,7 @@ venv/
 
 # Configuração local (IP, banco, caminhos)
 config.py
+
+# Apresentação gerada (contém os dados embutidos) e referência de terceiros
+apresentacao/painel_contraprestacao.html
+apresentacao_ref/
