@@ -1,5 +1,5 @@
 # ==========================================
-# QUERIES SQL (fonte única: usadas por baixar_dados.py e tirm_peltmg.py)
+# QUERIES SQL (usadas por baixar_dados.py)
 # ==========================================
 QUERIES = {
     "receita": """

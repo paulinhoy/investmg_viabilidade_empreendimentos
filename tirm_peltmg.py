@@ -14,10 +14,10 @@ TAXA_DESCONTO = 0.1102
 # a valores nominais, multiplicando o ano t por (1 + INFLACAO_ANUAL)^t, com t = 0 no primeiro ano.
 INFLACAO_ANUAL = 0.03
 
-PASTA_DADOS = "dados_brutos"   # pasta extraída do dados_brutos.zip (gerado por baixar_dados.py)
+PASTA_DADOS = "dados_brutos"   # pasta extraída do dados_brutos.zip (gerado por extracao/baixar_dados.py)
 PASTA_SAIDA = "saida"
 CAMINHO_EXCEL_EMP_100 = os.path.join(PASTA_DADOS, "modelagem_financeira_ferroviario_passageiros.xlsx")
-APLICAR_CORRECAO_EMP_100 = False   # desativada por enquanto (ver OBSERVACOES_DADOS.md)
+APLICAR_CORRECAO_EMP_100 = False   # desativada por enquanto (ver docs/OBSERVACOES_DADOS.md)
 
 # ==========================================
 # 2. FUNÇÕES DO PIPELINE
