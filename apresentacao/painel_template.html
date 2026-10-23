@@ -329,7 +329,7 @@ table.t tr.fraca td { color: var(--tinta-3); }
 <div class="deck" id="deck">
   <div class="palco" id="palco">
     <header class="barra">
-      <div class="marca"><strong>PELT-MG · Contraprestação do Estado</strong><span>Carteira recomendada · painel de teste</span></div>
+      <div class="marca"><strong>PELT-MG · Contraprestação do Estado</strong><span>Carteira recomendada · esfera estadual · status 1 a 5 · painel de teste</span></div>
       <nav class="abas" role="tablist" aria-label="Abas do painel">
         <button class="aba" role="tab" id="aba-visao"><span class="n">01</span>Visão geral</button>
         <button class="aba" role="tab" id="aba-calculo"><span class="n">02</span>Como calculamos</button>
@@ -685,7 +685,7 @@ table.t tr.fraca td { color: var(--tinta-3); }
     chip.className = "chip" + (Math.abs(estado.taxa - ESTADO_PADRAO_TAXA) > 1e-9 ? " alerta" : " ok");
     const premissas = `Desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo`;
     document.querySelectorAll(".rodape-premissas").forEach((s, i, todos) => { if (i < todos.length - 1) s.textContent = premissas; });
-    const fonte = `Fonte: PELT-MG, carteira recomendada (cenário 10)` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
+    const fonte = `Fonte: PELT-MG, carteira recomendada (cenário 10), esfera estadual, status de Concepção a Em contratação` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
     document.querySelectorAll(".rodape-fonte").forEach(s => { s.textContent = fonte; });
   }
   function kpis(id, itens) {

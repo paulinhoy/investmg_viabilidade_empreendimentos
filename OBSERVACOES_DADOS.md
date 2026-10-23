@@ -65,3 +65,9 @@ Existem 3 registros com `receita_ano < 0` na tabela `receita`, todos do **emp. 8
 
 - 226 linhas no relatório (`saida/resultados`), 164 com VPL calculada.
 - **148 empreendimentos com VPL negativa** → candidatos à contraprestação.
+
+## 8. Filtro geral da carteira (contraprestação e apresentação)
+
+`contraprestacao.filtrar_carteira` mantém só **status 1 a 5** (Concepção, Estudo, Projeto,
+Análise prévia, Em contratação; código vindo de `emp.status_empreendimento`) e **esfera estadual**.
+Sobram **84 empreendimentos com VPL**, dos quais **83 com VPL negativa**, todos do setor **rodoviário**.

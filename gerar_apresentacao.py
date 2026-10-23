@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 
 from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, PASTA_DADOS, PASTA_SAIDA
+from contraprestacao import filtrar_carteira
 
 # ==========================================
 # 1. PARÂMETROS E CONFIGURAÇÕES FIXAS
@@ -21,8 +22,9 @@ MARCADOR = "__DADOS_JSON__"
 def montar_dados():
     """Junta fluxo de caixa e cadastro de cada empreendimento em uma estrutura para o HTML."""
     df_fluxo = pd.read_parquet(os.path.join(PASTA_SAIDA, "fluxo_caixa.parquet"))
-    df_resultados = pd.read_parquet(os.path.join(PASTA_SAIDA, "resultados.parquet"))
+    df_resultados = filtrar_carteira(pd.read_parquet(os.path.join(PASTA_SAIDA, "resultados.parquet")))
     chaves = ['id_empreendimento', 'id_cenario']
+    df_fluxo = df_fluxo.merge(df_resultados[chaves], on=chaves)
 
     df_cadastro = df_resultados.set_index(chaves)
     emps = []
@@ -34,6 +36,7 @@ def montar_dados():
             'setor': cad['setor'],
             'natureza': cad['natureza_empreendimento'],
             'intervencao': cad['intervencao_principal'],
+            'status': cad['descr_status_empreendimento'],
             'ano0': int(grupo['ano_corrente'].iloc[0]),
             'capex': float(cad['capex']),
             'opex': float(cad['opex']),

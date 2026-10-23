@@ -5,13 +5,16 @@ import pandas as pd
 import numpy as np
 from numpy_financial import mirr, npv
 
-from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, PASTA_SAIDA, exportar_tabela
+from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, PASTA_SAIDA, exportar_tabela, ler_tabela
 
 # ==========================================
 # 1. PARÂMETROS E CONFIGURAÇÕES FIXAS
 # ==========================================
 # Convenção: o ano 1 da concessão é o primeiro fluxo da série (t = 0, não descontado).
 # A contraprestação é um valor constante por ano, pago do ano_inicio ao ano_fim (inclusive).
+# Filtro geral da carteira: status 1 (Concepção) a 5 (Em contratação) e esfera estadual.
+STATUS_PERMITIDOS = range(1, 6)
+ESFERA_PERMITIDA = 'Estadual'
 COLUNAS_CADASTRO = ['id_empreendimento', 'id_cenario', 'nome_empreendimento', 'setor']
 COLUNAS_SAIDA = COLUNAS_CADASTRO + [
     'anos', 'anos_concessao', 'ano_calendario_inicio', 'ano_calendario_fim',
@@ -35,6 +38,14 @@ def interpretar_intervalo(texto):
     if ano_inicio < 1 or ano_fim < ano_inicio:
         raise ValueError(f"Intervalo inválido: '{texto}'. O início deve ser >= 1 e menor ou igual ao fim.")
     return ano_inicio, ano_fim
+
+def filtrar_carteira(df_resultados):
+    """Mantém só os empreendimentos com status entre 1 e 5 e esfera estadual."""
+    # resultados só traz a descrição do status; o código vem do cadastro (emp)
+    df_status = ler_tabela("emp")[['id_empreendimento', 'status_empreendimento']]
+    df = df_resultados.merge(df_status, on='id_empreendimento', how='left')
+    filtro = df['status_empreendimento'].isin(STATUS_PERMITIDOS) & (df['esfera_acao'] == ESFERA_PERMITIDA)
+    return df[filtro].drop(columns='status_empreendimento')
 
 def indicadores(fluxos, taxa=TAXA_DESCONTO):
     """VPL e TIRM de uma série de fluxos (mesmos parâmetros do tirm_peltmg.py)."""
@@ -76,6 +87,7 @@ def contraprestacao_carteira(df_fluxo, df_resultados, intervalo, taxa=TAXA_DESCO
     ano_inicio, ano_fim = interpretar_intervalo(intervalo)
     chaves = ['id_empreendimento', 'id_cenario']
 
+    df_resultados = filtrar_carteira(df_resultados)
     df_negativos = df_resultados[df_resultados['vpl'] < 0][COLUNAS_CADASTRO]
     df_fluxo = df_fluxo.merge(df_negativos[chaves], on=chaves).sort_values(chaves + ['t'])
 
