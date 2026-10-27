@@ -81,3 +81,19 @@ As receitas do banco estão em **moeda constante** (sem inflação). Por isso h�
 
 A contraprestação gera `contraprestacao_<a>-<b>` e `contraprestacao_<a>-<b>_inflacao`. Nos dois, o aporte é um valor
 nominal constante descontado a 11,02%.
+
+## 10. Custo distribuído ao longo da concessão (branch `custo-distribuido`)
+
+`dados_brutos/custo_distribuido.csv` (separador `;`): custo anual (`valor = valor_capex + valor_opex`) de
+**83 empreendimentos** (cenário 10), com `t` e `ano`. Usado com `USAR_CUSTO_DISTRIBUIDO = True` em `tirm_peltmg.py`;
+os demais continuam com o custo inteiro no primeiro ano (coluna `custo_distribuido` no `fluxo_caixa`).
+
+- O total por empreendimento bate com `custo_final` (diferença < R$ 0,01).
+- O `t` do arquivo é contado a partir de ~2024 e é ignorado: o `t` do fluxo é recalculado (0 = primeiro ano do fluxo).
+- **77 empreendimentos têm custo 1 ano depois do fim da receita** (ex.: emp. 36, receita 2034–2063, custo até 2064).
+  Esse ano entra com receita 0 e a concessão passa a ter 31 anos.
+- **3 empreendimentos têm custo antes da receita** (2 com 2 anos, 1 com 6 anos de antecedência). Nesses, o ano 1
+  da concessão passa a ser o primeiro ano de custo.
+- **CAPEX e OPEX parecem invertidos na tabela `capex_opex`**: no emp. 36 o arquivo tem CAPEX R$ 238,3 mi e OPEX R$ 43,9 mi;
+  a `capex_opex` tem o contrário. A soma (custo total) é a mesma. O painel usa os valores do arquivo. **A confirmar.**
+- A query que gerou o arquivo ainda não está em `extracao/queries.py`.

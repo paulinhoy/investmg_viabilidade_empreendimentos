@@ -18,17 +18,21 @@ PASTA_DADOS = "dados_brutos"   # pasta extraída do dados_brutos.zip (gerado por
 PASTA_SAIDA = "saida"
 CAMINHO_EXCEL_EMP_100 = os.path.join(PASTA_DADOS, "modelagem_financeira_ferroviario_passageiros.xlsx")
 APLICAR_CORRECAO_EMP_100 = False   # desativada por enquanto (ver docs/OBSERVACOES_DADOS.md)
+# Custo anual distribuído ao longo da concessão (dados_brutos/custo_distribuido.csv). Empreendimentos
+# que não estão no arquivo continuam com o custo inteiro no primeiro ano.
+USAR_CUSTO_DISTRIBUIDO = True
+ID_CENARIO_CUSTO_DISTRIBUIDO = 10   # o arquivo só tem a carteira recomendada
 
 # ==========================================
 # 2. FUNÇÕES DO PIPELINE
 # ==========================================
 
-def ler_tabela(nome):
+def ler_tabela(nome, sep=','):
     """Lê uma tabela baixada por baixar_dados.py (parquet ou, na falta dele, CSV)."""
     caminho_parquet = os.path.join(PASTA_DADOS, f"{nome}.parquet")
     if os.path.exists(caminho_parquet):
         return pd.read_parquet(caminho_parquet)
-    return pd.read_csv(os.path.join(PASTA_DADOS, f"{nome}.csv"))
+    return pd.read_csv(os.path.join(PASTA_DADOS, f"{nome}.csv"), sep=sep)
 
 def carregar_dados():
     """Lê os arquivos locais e retorna um dicionário de DataFrames."""
@@ -42,16 +46,45 @@ def carregar_dados():
         "df_receita_codemge": ler_tabela("receita_codemge"),
         "df_ferroviario_passageiro": ler_tabela("ferroviario_passageiro"),
         "df_light": ler_tabela("concessao_light"),
-        "df_aero_duto": ler_tabela("aero_duto")
+        "df_aero_duto": ler_tabela("aero_duto"),
+        "df_custo_distribuido": ler_tabela("custo_distribuido", sep=';') if USAR_CUSTO_DISTRIBUIDO else None
     }
 
-def preparar_fluxo_caixa(df_receita, df_custo):
-    """Monta o fluxo de caixa abatendo os custos no primeiro ano do projeto.
-    Mantém o custo abatido (coluna 'custo') e o período 't' (0 = primeiro ano)."""
-    df_final = pd.merge(df_receita, df_custo, on=['id_empreendimento', 'id_cenario'], how='left')
-    primeiro_ano = df_final.groupby(['id_empreendimento', 'id_cenario'])['ano_corrente'].transform('min')
+def distribuir_custo(df_final, df_custo_distribuido):
+    """Troca o custo do primeiro ano pelo custo anual distribuído, nos empreendimentos que o têm.
+    Anos com custo e sem receita (antes ou depois da série) entram com receita 0."""
+    chaves = ['id_empreendimento', 'id_cenario']
+    df_dist = df_custo_distribuido.rename(columns={'ano': 'ano_corrente', 'valor': 'custo'})
+    df_dist = df_dist[['id_empreendimento', 'ano_corrente', 'custo']].assign(id_cenario=ID_CENARIO_CUSTO_DISTRIBUIDO)
+
+    tem_dist = df_final.set_index(chaves).index.isin(df_dist.set_index(chaves).index)
+    df_parte = df_final[tem_dist].drop(columns='custo').merge(df_dist, on=chaves + ['ano_corrente'], how='outer')
+    df_parte = df_parte[df_parte.set_index(chaves).index.isin(df_final[tem_dist].set_index(chaves).index)]
+
+    df_parte['receita_ano'] = df_parte['receita_ano'].fillna(0.0)
+    df_parte['custo'] = df_parte['custo'].fillna(0.0)
+    for coluna in ['modal', 'custo_final']:
+        df_parte[coluna] = df_parte.groupby(chaves)[coluna].transform(lambda serie: serie.ffill().bfill())
+    df_parte['custo_distribuido'] = True
+
+    return pd.concat([df_final[~tem_dist], df_parte], ignore_index=True)
+
+def preparar_fluxo_caixa(df_receita, df_custo, df_custo_distribuido=None):
+    """Monta o fluxo de caixa anual (receita - custo).
+    O custo é distribuído ao longo dos anos quando há df_custo_distribuido para o empreendimento;
+    caso contrário, é abatido inteiro no primeiro ano.
+    Mantém o custo de cada ano (coluna 'custo'), o período 't' (0 = primeiro ano) e 'custo_distribuido'."""
+    chaves = ['id_empreendimento', 'id_cenario']
+    df_final = pd.merge(df_receita, df_custo, on=chaves, how='left')
+    primeiro_ano = df_final.groupby(chaves)['ano_corrente'].transform('min')
 
     df_final['custo'] = np.where(df_final['ano_corrente'] == primeiro_ano, df_final['custo_final'], 0.0)
+    df_final['custo_distribuido'] = False
+    if df_custo_distribuido is not None:
+        df_final = distribuir_custo(df_final, df_custo_distribuido)
+
+    # o custo distribuído pode começar antes da receita: o primeiro ano é o primeiro do fluxo
+    primeiro_ano = df_final.groupby(chaves)['ano_corrente'].transform('min')
     df_final['fluxo'] = df_final['receita_ano'] - df_final['custo']
     df_final['t'] = (df_final['ano_corrente'] - primeiro_ano).astype(int)
     df_final['fluxo_corrigido'] = df_final['fluxo'] * (1 + INFLACAO_ANUAL) ** df_final['t']
@@ -307,7 +340,7 @@ if __name__ == "__main__":
 
     # 2. Processar Fluxo de Caixa
     print("Processando fluxo de caixa e indicadores...")
-    df_fluxo = preparar_fluxo_caixa(dados["df_receita"], dados["df_custo"])
+    df_fluxo = preparar_fluxo_caixa(dados["df_receita"], dados["df_custo"], dados["df_custo_distribuido"])
 
     # 3. Calcular Indicadores
     df_resultados = df_fluxo.groupby(['id_empreendimento', 'id_cenario']).apply(calcular_indicadores_financeiros).reset_index()
@@ -318,6 +351,6 @@ if __name__ == "__main__":
     print("\n✅ Processamento concluído com sucesso!")
 
     # 5. Exportar localmente
-    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'fluxo', 'fluxo_corrigido']
+    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'custo_distribuido', 'fluxo', 'fluxo_corrigido']
     exportar_tabela(df_fluxo[colunas_fluxo], "fluxo_caixa")
     exportar_tabela(df_final, "resultados")

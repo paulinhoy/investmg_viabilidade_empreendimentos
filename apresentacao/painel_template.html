@@ -704,7 +704,7 @@ table.t tr.fraca td { color: var(--tinta-3); }
     document.querySelectorAll("#seg-moeda button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.moeda === estado.moeda)));
     document.getElementById("bt-inflacao").textContent = `Com inflação ${pct(INFLACAO, 1)}`;
     chip.className = "chip" + (Math.abs(estado.taxa - ESTADO_PADRAO_TAXA) > 1e-9 ? " alerta" : " ok");
-    const premissas = `Fluxo ${NOME_MOEDA()} · desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo`;
+    const premissas = `Fluxo ${NOME_MOEDA()} · desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo · custo distribuído ao longo da concessão`;
     document.querySelectorAll(".rodape-premissas").forEach((s, i, todos) => { if (i < todos.length - 1) s.textContent = premissas; });
     const fonte = `Fonte: PELT-MG, carteira recomendada (cenário 10), esfera estadual, status de Concepção a Em contratação` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
     document.querySelectorAll(".rodape-fonte").forEach(s => { s.textContent = fonte; });
@@ -804,8 +804,8 @@ table.t tr.fraca td { color: var(--tinta-3); }
     document.getElementById("lado-calculo").innerHTML = `
       <ol class="passos">
         <li><div><b>Trazer o fluxo para hoje</b><span class="det">${estado.moeda === "inflacao"
-          ? `Receitas do ano t corrigidas por (1 + ${pct(INFLACAO, 1)})<sup>t</sup> e depois divididas por (1 + ${pct(r)})<sup>t</sup>; custo (CAPEX + OPEX) no ano 1. A inflação aumenta as receitas futuras em reais correntes.`
-          : `Receitas (em moeda constante, sem inflação) e custo (CAPEX + OPEX, no ano 1) divididos por (1 + ${pct(r)})<sup>ano − 1</sup>. A soma é a VPL.`}</span></div></li>
+          ? `Receitas do ano t corrigidas por (1 + ${pct(INFLACAO, 1)})<sup>t</sup> e depois divididas por (1 + ${pct(r)})<sup>t</sup>; o mesmo vale para o custo (CAPEX + OPEX) de cada ano.`
+          : `Receita menos custo (CAPEX + OPEX) de cada ano, em moeda constante, dividido por (1 + ${pct(r)})<sup>ano − 1</sup>. A soma é a VPL.`}</span></div></li>
         <li><div><b>VPL negativa = o que falta</b><span class="det">Em reais de hoje, é o que o investidor perderia. O aporte cobre exatamente isso.</span></div></li>
         <li><div><b>Dividir pelos fatores dos anos do aporte</b><span class="det">Cada real futuro vale menos, então o Estado paga mais em valor nominal.</span></div></li>
       </ol>
@@ -861,7 +861,7 @@ table.t tr.fraca td { color: var(--tinta-3); }
       <div class="bloco"><h3>Empreendimento ${e.id}</h3><p class="forte">${esc(e.nome)}</p>
         <p class="nota">${esc(e.setor)} · ${esc(e.intervencao || "")}</p></div>
       <div class="bloco"><h3>Fluxo de caixa</h3>
-        <p>Custo no ano 1 (${e.ano0}): <span class="forte num">${moeda(e.custo)}</span> <span class="nota">CAPEX ${moeda(e.capex)} · OPEX ${moeda(e.opex)}</span></p>
+        <p>Custo total ${e.distribuido ? `em ${e.anos_custo} anos` : `no ano 1 (${e.ano0})`}: <span class="forte num">${moeda(e.custo)}</span> <span class="nota">CAPEX ${moeda(e.capex)} · OPEX ${moeda(e.opex)}</span></p>
         <p>Receita em ${n} anos: <span class="forte num">${moeda(receitaTotal)}</span> (${NOME_MOEDA()})</p></div>
       <div class="bloco"><h3>Leitura</h3>${precisa
         ? `<p>Trazidos a hoje, faltam <span class="forte laranja-t num">${moeda(-r.vplOriginal)}</span>. O Estado paga <span class="forte azul-t num">${moeda(r.anual)}</span> por ano durante ${estado.fim - estado.inicio + 1} anos (${moeda(r.total)} no total), que valem exatamente isso hoje.</p>

@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, INFLACAO_ANUAL, PASTA_DADOS, PASTA_SAIDA
+from tirm_peltmg import TAXA_DESCONTO, TAXA_FINANCIAMENTO, TAXA_REINVESTIMENTO, INFLACAO_ANUAL, PASTA_DADOS, PASTA_SAIDA, USAR_CUSTO_DISTRIBUIDO, ler_tabela
 from contraprestacao import filtrar_carteira
 
 # ==========================================
@@ -27,6 +27,10 @@ def montar_dados():
     df_fluxo = df_fluxo.merge(df_resultados[chaves], on=chaves)
 
     df_cadastro = df_resultados.set_index(chaves)
+    # CAPEX/OPEX totais do custo distribuído, quando houver (substituem os da tabela capex_opex)
+    capex_opex_dist = {}
+    if USAR_CUSTO_DISTRIBUIDO:
+        capex_opex_dist = ler_tabela("custo_distribuido", sep=';').groupby('id_empreendimento')[['valor_capex', 'valor_opex']].sum().to_dict('index')
     emps = []
     for (id_emp, id_cen), grupo in df_fluxo.sort_values(chaves + ['t']).groupby(chaves):
         cad = df_cadastro.loc[(id_emp, id_cen)]
@@ -38,9 +42,11 @@ def montar_dados():
             'intervencao': cad['intervencao_principal'],
             'status': cad['descr_status_empreendimento'],
             'ano0': int(grupo['ano_corrente'].iloc[0]),
-            'capex': float(cad['capex']),
-            'opex': float(cad['opex']),
-            'custo': float(grupo['custo'].iloc[0]),
+            'capex': float(capex_opex_dist.get(id_emp, {}).get('valor_capex', cad['capex'])),
+            'opex': float(capex_opex_dist.get(id_emp, {}).get('valor_opex', cad['opex'])),
+            'custo': float(grupo['custo'].sum()),
+            'distribuido': bool(grupo['custo_distribuido'].any()),
+            'anos_custo': int((grupo['custo'] > 0).sum()),
             'receita': [round(float(v), 2) for v in grupo['receita_ano']],
             'fluxo': [round(float(v), 2) for v in grupo['fluxo']]
         })
