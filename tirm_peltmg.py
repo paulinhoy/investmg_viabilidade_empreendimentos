@@ -52,10 +52,16 @@ def carregar_dados():
 
 def distribuir_custo(df_final, df_custo_distribuido):
     """Troca o custo do primeiro ano pelo custo anual distribuído, nos empreendimentos que o têm.
-    Anos com custo e sem receita (antes ou depois da série) entram com receita 0."""
+    Anos com custo antes do início da receita entram com receita 0."""
     chaves = ['id_empreendimento', 'id_cenario']
     df_dist = df_custo_distribuido.rename(columns={'ano': 'ano_corrente', 'valor': 'custo'})
     df_dist = df_dist[['id_empreendimento', 'ano_corrente', 'custo']].assign(id_cenario=ID_CENARIO_CUSTO_DISTRIBUIDO)
+
+    # custo depois do fim da receita (erro na construção do arquivo) vai para o último ano da receita
+    ultimo_ano = df_final.groupby(chaves)['ano_corrente'].max().rename('ultimo_ano').reset_index()
+    df_dist = df_dist.merge(ultimo_ano, on=chaves, how='left')
+    df_dist['ano_corrente'] = df_dist[['ano_corrente', 'ultimo_ano']].min(axis=1).astype(int)
+    df_dist = df_dist.groupby(chaves + ['ano_corrente'], as_index=False)['custo'].sum()
 
     tem_dist = df_final.set_index(chaves).index.isin(df_dist.set_index(chaves).index)
     df_parte = df_final[tem_dist].drop(columns='custo').merge(df_dist, on=chaves + ['ano_corrente'], how='outer')

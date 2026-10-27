@@ -90,8 +90,9 @@ os demais continuam com o custo inteiro no primeiro ano (coluna `custo_distribui
 
 - O total por empreendimento bate com `custo_final` (diferença < R$ 0,01).
 - O `t` do arquivo é contado a partir de ~2024 e é ignorado: o `t` do fluxo é recalculado (0 = primeiro ano do fluxo).
-- **77 empreendimentos têm custo 1 ano depois do fim da receita** (ex.: emp. 36, receita 2034–2063, custo até 2064).
-  Esse ano entra com receita 0 e a concessão passa a ter 31 anos.
+- **77 empreendimentos têm custo 1 ano depois do fim da receita** (ex.: emp. 36, receita 2034–2063, custo até 2064),
+  erro na construção do arquivo. O custo desse ano é **somado ao último ano da receita**, então a série tem o
+  mesmo número de anos da receita e o custo total é preservado.
 - **3 empreendimentos têm custo antes da receita** (2 com 2 anos, 1 com 6 anos de antecedência). Nesses, o ano 1
   da concessão passa a ser o primeiro ano de custo.
 - **CAPEX e OPEX parecem invertidos na tabela `capex_opex`**: no emp. 36 o arquivo tem CAPEX R$ 238,3 mi e OPEX R$ 43,9 mi;
