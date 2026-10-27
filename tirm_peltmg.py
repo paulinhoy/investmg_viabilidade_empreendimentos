@@ -52,25 +52,20 @@ def carregar_dados():
 
 def distribuir_custo(df_final, df_custo_distribuido):
     """Troca o custo do primeiro ano pelo custo anual distribuído, nos empreendimentos que o têm.
-    Anos com custo antes do início da receita entram com receita 0."""
+    A série continua com os anos da receita: custo de anos antes do início da receita vai para o
+    primeiro ano dela, e custo depois do fim vai para o último (erro na construção do arquivo)."""
     chaves = ['id_empreendimento', 'id_cenario']
     df_dist = df_custo_distribuido.rename(columns={'ano': 'ano_corrente', 'valor': 'custo'})
     df_dist = df_dist[['id_empreendimento', 'ano_corrente', 'custo']].assign(id_cenario=ID_CENARIO_CUSTO_DISTRIBUIDO)
 
-    # custo depois do fim da receita (erro na construção do arquivo) vai para o último ano da receita
-    ultimo_ano = df_final.groupby(chaves)['ano_corrente'].max().rename('ultimo_ano').reset_index()
-    df_dist = df_dist.merge(ultimo_ano, on=chaves, how='left')
-    df_dist['ano_corrente'] = df_dist[['ano_corrente', 'ultimo_ano']].min(axis=1).astype(int)
+    limites = df_final.groupby(chaves)['ano_corrente'].agg(primeiro_ano='min', ultimo_ano='max').reset_index()
+    df_dist = df_dist.merge(limites, on=chaves)
+    df_dist['ano_corrente'] = df_dist['ano_corrente'].clip(df_dist['primeiro_ano'], df_dist['ultimo_ano'])
     df_dist = df_dist.groupby(chaves + ['ano_corrente'], as_index=False)['custo'].sum()
 
     tem_dist = df_final.set_index(chaves).index.isin(df_dist.set_index(chaves).index)
-    df_parte = df_final[tem_dist].drop(columns='custo').merge(df_dist, on=chaves + ['ano_corrente'], how='outer')
-    df_parte = df_parte[df_parte.set_index(chaves).index.isin(df_final[tem_dist].set_index(chaves).index)]
-
-    df_parte['receita_ano'] = df_parte['receita_ano'].fillna(0.0)
+    df_parte = df_final[tem_dist].drop(columns='custo').merge(df_dist, on=chaves + ['ano_corrente'], how='left')
     df_parte['custo'] = df_parte['custo'].fillna(0.0)
-    for coluna in ['modal', 'custo_final']:
-        df_parte[coluna] = df_parte.groupby(chaves)[coluna].transform(lambda serie: serie.ffill().bfill())
     df_parte['custo_distribuido'] = True
 
     return pd.concat([df_final[~tem_dist], df_parte], ignore_index=True)
@@ -89,10 +84,8 @@ def preparar_fluxo_caixa(df_receita, df_custo, df_custo_distribuido=None):
     if df_custo_distribuido is not None:
         df_final = distribuir_custo(df_final, df_custo_distribuido)
 
-    # o custo distribuído pode começar antes da receita: o primeiro ano é o primeiro do fluxo
-    primeiro_ano = df_final.groupby(chaves)['ano_corrente'].transform('min')
     df_final['fluxo'] = df_final['receita_ano'] - df_final['custo']
-    df_final['t'] = (df_final['ano_corrente'] - primeiro_ano).astype(int)
+    df_final['t'] = (df_final['ano_corrente'] - df_final.groupby(chaves)['ano_corrente'].transform('min')).astype(int)
     df_final['fluxo_corrigido'] = df_final['fluxo'] * (1 + INFLACAO_ANUAL) ** df_final['t']
     df_final = df_final.drop(columns=['custo_final'])
 

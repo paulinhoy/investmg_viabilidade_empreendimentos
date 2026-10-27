@@ -93,8 +93,8 @@ os demais continuam com o custo inteiro no primeiro ano (coluna `custo_distribui
 - **77 empreendimentos têm custo 1 ano depois do fim da receita** (ex.: emp. 36, receita 2034–2063, custo até 2064),
   erro na construção do arquivo. O custo desse ano é **somado ao último ano da receita**, então a série tem o
   mesmo número de anos da receita e o custo total é preservado.
-- **3 empreendimentos têm custo antes da receita** (2 com 2 anos, 1 com 6 anos de antecedência). Nesses, o ano 1
-  da concessão passa a ser o primeiro ano de custo.
+- **3 empreendimentos têm custo antes da receita** (792 com 6 anos, 971 e 972 com 2 anos de antecedência).
+  O custo desses anos é **somado ao primeiro ano da receita**. Assim, todos os fluxos têm exatamente os anos da receita.
 - **CAPEX e OPEX parecem invertidos na tabela `capex_opex`**: no emp. 36 o arquivo tem CAPEX R$ 238,3 mi e OPEX R$ 43,9 mi;
   a `capex_opex` tem o contrário. A soma (custo total) é a mesma. O painel usa os valores do arquivo. **A confirmar.**
 - A query que gerou o arquivo ainda não está em `extracao/queries.py`.
