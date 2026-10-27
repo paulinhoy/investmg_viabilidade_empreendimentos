@@ -376,10 +376,6 @@ table.t tr.sel td { background: var(--azul-lavado); }
         <button class="aba" role="tab" id="aba-ranking"><span class="n">05</span>Ranking</button>
       </nav>
       <div class="direita">
-        <span class="segmentado" id="seg-moeda" role="group" aria-label="Tratamento da moeda">
-          <button type="button" data-moeda="constante">Moeda constante</button>
-          <button type="button" data-moeda="inflacao" id="bt-inflacao">Com inflação</button>
-        </span>
         <span class="chip" id="chip-taxa"></span>
         <div class="nav">
           <button class="seta" id="anterior" type="button" aria-label="Aba anterior">‹</button>
@@ -402,7 +398,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
             <span class="campo"><input type="number" class="in-inicio" min="1" max="60" step="1"><span class="u">até</span><input type="number" class="in-fim" min="1" max="60" step="1"><span class="u">ano da concessão</span></span>
           </div>
           <div class="controle"><span class="rotulo">Taxa de desconto</span>
-            <span class="campo"><span class="valor-fixo num" id="v-taxa"></span><span class="u">altere na aba 02</span></span>
+            <span class="campo"><span class="valor-fixo num" id="v-taxa"></span><span class="u">fixa</span></span>
           </div>
         </div>
         <div class="kpis" id="k-visao-carteira"></div>
@@ -432,15 +428,8 @@ table.t tr.sel td { background: var(--azul-lavado); }
           <div class="controle"><label class="rotulo" for="tp-setor">Setor</label>
             <span class="campo"><select id="tp-setor" style="width:170px"></select></span>
           </div>
-          <div class="controle"><label class="rotulo" for="tp-status">Status</label>
-            <span class="campo"><select id="tp-status" style="width:230px"></select></span>
-          </div>
-          <div class="controle">
-            <div class="deslizante" style="width:340px">
-              <div class="topo"><label class="rotulo" for="c-taxa">Taxa de desconto</label><span class="valor" id="c-taxa-valor"></span></div>
-              <input type="range" id="c-taxa" min="0.02" max="0.20" step="0.0001">
-              <div class="topo"><span class="ref" id="c-taxa-ref"></span><button class="botao" type="button" id="c-taxa-padrao" style="margin-left:auto; padding:6px 10px">Voltar ao padrão</button></div>
-            </div>
+          <div class="controle"><span class="rotulo">Taxa de desconto</span>
+            <span class="campo"><span class="valor-fixo num" id="tp-taxa"></span><span class="u">fixa</span></span>
           </div>
           <div class="controle"><span class="rotulo">Anos do aporte</span>
             <span class="campo"><input type="number" class="in-inicio" min="1" max="60" step="1"><span class="u">até</span><input type="number" class="in-fim" min="1" max="60" step="1"><span class="u">ano da concessão</span></span>
@@ -522,8 +511,8 @@ table.t tr.sel td { background: var(--azul-lavado); }
         <div class="kpis" id="k-pib"></div>
         <div class="corpo">
           <figure class="fig">
-            <figcaption class="fig-cab"><b>Impacto no PIB dos municípios, por ano</b><span id="cab-pib"></span>
-              <span class="legenda"><span><i class="amostra" style="background:var(--azul)"></i>Impacto no PIB</span><span><i class="amostra linha" style="background:var(--tinta)"></i>Investimento (CAPEX + OPEX)</span></span>
+            <figcaption class="fig-cab"><b>PIB total dos municípios impactados, por ano</b><span id="cab-pib"></span>
+              <span class="legenda"><span><i class="amostra" style="background:var(--azul)"></i>PIB total</span></span>
             </figcaption>
             <div class="grafico" id="g-pib"></div>
           </figure>
@@ -541,9 +530,6 @@ table.t tr.sel td { background: var(--azul-lavado); }
         <div class="controles">
           <div class="controle"><span class="rotulo">Setor</span>
             <span class="segmentado" id="rk-setor" role="group" aria-label="Filtrar por setor"></span>
-          </div>
-          <div class="controle"><label class="rotulo" for="rk-intervencao">Intervenção</label>
-            <span class="campo"><select id="rk-intervencao" style="max-width:360px"></select></span>
           </div>
           <div class="controle"><label class="rotulo" for="rk-teto">Aporte anual até</label>
             <span class="campo"><input type="number" id="rk-teto" min="0" step="10" placeholder="sem teto" style="width:120px"><span class="u">R$ mi/ano</span></span>
@@ -637,9 +623,9 @@ table.t tr.sel td { background: var(--azul-lavado); }
     moeda: "constante",
     inicio: 1,
     fim: 5,
-    emp: (POR_ID.has(11) ? 11 : EMPS[0].id),
+    emp: (POR_ID.has(1012) ? 1012 : EMPS[0].id),
     aba: 0,
-    filtro: { setor: "Todos", intervencao: "", busca: "", teto: null },
+    filtro: { setor: "Todos", busca: "", teto: null, ligado: false },
     tp: null,
     pib: { emp: 0, mun: "", anoIni: null, anoFim: null },
     ordem: { col: "anual", asc: true }
@@ -753,19 +739,13 @@ table.t tr.sel td { background: var(--azul-lavado); }
     document.querySelectorAll(".in-inicio").forEach(i => { i.value = estado.inicio; });
     document.querySelectorAll(".in-fim").forEach(i => { i.value = estado.fim; });
     document.querySelectorAll(".sel-emp").forEach(s => { s.value = String(estado.emp); });
-    const taxa = document.getElementById("c-taxa");
-    taxa.value = estado.taxa;
-    taxa.style.setProperty("--cheio", `${((estado.taxa - taxa.min) / (taxa.max - taxa.min)) * 100}%`);
-    document.getElementById("c-taxa-valor").textContent = `${pct(estado.taxa)} a.a.`;
-    document.getElementById("c-taxa-ref").textContent = `Padrão do modelo: ${pct(ESTADO_PADRAO_TAXA)} a.a.`;
+    document.getElementById("tp-taxa").textContent = `${pct(estado.taxa)} a.a.`;
     const chip = document.getElementById("chip-taxa");
     chip.textContent = `taxa ${pct(estado.taxa)} · anos ${estado.inicio}–${estado.fim}`;
-    document.querySelectorAll("#seg-moeda button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.moeda === estado.moeda)));
-    document.getElementById("bt-inflacao").textContent = `Com inflação ${pct(INFLACAO, 1)}`;
-    chip.className = "chip" + (Math.abs(estado.taxa - ESTADO_PADRAO_TAXA) > 1e-9 ? " alerta" : " ok");
-    const premissas = `Fluxo ${NOME_MOEDA()} · desconto ${pct(estado.taxa)} a.a. · TIRM: financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo · custo distribuído ao longo da concessão`;
+    chip.className = "chip ok";
+    const premissas = `Financiamento ${pct(META.taxa_financiamento)}, reinvestimento ${pct(META.taxa_reinvestimento)} · aporte constante, ano 1 = primeiro ano do fluxo · custo distribuído ao longo da concessão`;
     document.querySelectorAll(".rodape-premissas").forEach((s, i, todos) => { if (i < todos.length - 1) s.textContent = premissas; });
-    const fonte = `Fonte: PELT-MG, carteira recomendada (cenário 10), esfera estadual, status de Concepção a Em contratação` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
+    const fonte = `Fonte: PELT-MG, carteira recomendada, esfera estadual, status de Concepção a Em contratação` + (META.data_extracao ? ` · extração ${META.data_extracao.slice(0, 10)}` : "");
     document.querySelectorAll(".rodape-fonte").forEach(s => { s.textContent = fonte; });
   }
   function kpis(id, itens) {
@@ -805,7 +785,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
       `Para tornar a carteira viável, o Estado precisaria aportar ${moeda(anual)} por ano, do ano ${estado.inicio} ao ${estado.fim} de cada concessão`;
     kpis("k-visao-carteira", [
       { v: String(EMPS.length), r: "Empreendimentos", s: porSetor.map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ") + (META.sem_fluxo ? ` · ${META.sem_fluxo} sem fluxo de caixa fora` : "") },
-      { v: moeda(investimento), r: "Valor total (CAPEX + OPEX)", s: NOME_MOEDA() },
+      { v: moeda(investimento), r: "Valor total (CAPEX + OPEX)" },
       { v: moeda(capex), r: "CAPEX", s: `${pct(capex / investimento, 0)} do valor total` },
       { v: moeda(opex), r: "OPEX", s: `${pct(opex / investimento, 0)} do valor total` }
     ]);
@@ -822,8 +802,6 @@ table.t tr.sel td { background: var(--azul-lavado); }
     document.getElementById("lado-visao").innerHTML = `
       <div class="bloco"><h3>Por setor</h3>
         ${distribuicao(porSetor.map(([s, n]) => ({ nome: `<span class="amostra" style="background:${corSetor(s)}; margin-right:8px"></span>${esc(s)} · <b>${n}</b>`, valor: investimentoSetor.get(s), rotulo: `${moeda(investimentoSetor.get(s))} · aporte ${moeda(aporteSetor(s))}/ano`, cor: corSetor(s) })))}</div>
-      <div class="bloco"><h3>Por status</h3>
-        ${distribuicao(contar(EMPS, e => e.status).map(([s, n]) => ({ nome: esc(s), valor: n, rotulo: `${n}`, cor: "var(--tinta-2)" })))}</div>
       <p class="nota">Aporte total = soma dos aportes anuais (nominal); em valor presente, é a VPL negativa somada.</p>`;
 
     // gráfico: barras ordenadas, escala log
@@ -859,7 +837,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
   // ---------------------------------------------------------------- 02 · alocação temporal
   const ANO_MIN = Math.min(...EMPS.map(e => e.ano0));
   const ANO_MAX = Math.max(...EMPS.map(e => e.ano0 + e.fluxo.length - 1));
-  function filtrosTemporalPadrao() { return { emp: 0, setor: "", status: "", anoIni: ANO_MIN, anoFim: ANO_MAX, ordem: { col: "inv", asc: false } }; }
+  function filtrosTemporalPadrao() { return { emp: 0, setor: "", anoIni: ANO_MIN, anoFim: ANO_MAX, ordem: { col: "inv", asc: false } }; }
   function opcoes(lista, todos) {
     return `<option value="">${todos}</option>` + lista.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
   }
@@ -869,10 +847,8 @@ table.t tr.sel td { background: var(--azul-lavado); }
     selEmp.innerHTML = `<option value="0">Todos</option>` + EMPS.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
       .map(e => `<option value="${e.id}">${esc(rotuloEmp(e))}</option>`).join("");
     document.getElementById("tp-setor").innerHTML = opcoes([...new Set(EMPS.map(e => e.setor))].sort(), "Todos");
-    document.getElementById("tp-status").innerHTML = opcoes([...new Set(EMPS.map(e => e.status))].sort(), "Todos");
     selEmp.addEventListener("change", () => { f.emp = +selEmp.value; desenharTemporal(); });
     document.getElementById("tp-setor").addEventListener("change", ev => { f.setor = ev.target.value; desenharTemporal(); });
-    document.getElementById("tp-status").addEventListener("change", ev => { f.status = ev.target.value; desenharTemporal(); });
     ["tp-ano-ini", "tp-ano-fim"].forEach(id => document.getElementById(id).addEventListener("change", ev => {
       const v = parseInt(ev.target.value, 10);
       if (isFinite(v)) {
@@ -885,7 +861,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
   }
   function alocacaoTemporal() {
     const f = estado.tp;
-    const lista = EMPS.filter(e => (!f.emp || e.id === f.emp) && (!f.setor || e.setor === f.setor) && (!f.status || e.status === f.status));
+    const lista = EMPS.filter(e => (!f.emp || e.id === f.emp) && (!f.setor || e.setor === f.setor));
     const porAno = [];
     for (let a = f.anoIni; a <= f.anoFim; a++) porAno.push({ ano: a, capex: 0, opex: 0, aporte: 0 });
     const linhas = lista.map(e => {
@@ -918,7 +894,6 @@ table.t tr.sel td { background: var(--azul-lavado); }
     const f = estado.tp;
     document.getElementById("tp-emp").value = String(f.emp);
     document.getElementById("tp-setor").value = f.setor;
-    document.getElementById("tp-status").value = f.status;
     document.getElementById("tp-ano-ini").value = f.anoIni;
     document.getElementById("tp-ano-fim").value = f.anoFim;
 
@@ -932,7 +907,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
       ? `${moeda(inv)} de investimento ${periodo}, com pico em ${pico.ano}; o aporte do Estado soma ${moeda(aporte)} no período`
       : `Nenhum investimento ${periodo} com os filtros escolhidos`;
     kpis("k-temporal", [
-      { v: String(lista.length), r: "Empreendimentos", s: f.emp || f.setor || f.status ? "com os filtros escolhidos" : "toda a carteira" },
+      { v: String(lista.length), r: "Empreendimentos", s: f.emp || f.setor ? "com os filtros escolhidos" : "toda a carteira" },
       { v: moeda(inv), r: "Investimento no período", s: `CAPEX ${moeda(capex)} · OPEX ${moeda(opex)}` },
       { v: moeda(aporte), r: "Aporte do Estado no período", s: `anos ${estado.inicio}–${estado.fim} de cada concessão`, cor: "azul" },
       { v: inv > 0 ? String(pico.ano) : "—", r: "Ano de maior investimento", s: inv > 0 ? moeda(pico.capex + pico.opex) : "" }
@@ -997,7 +972,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
 
     if (r.erro) {
       document.getElementById("titulo-simulador").textContent = `Intervalo inválido: ${r.erro} Escolha anos entre 1 e ${n}.`;
-      kpis("k-simulador", [{ v: "—", r: "VPL sem aporte" }, { v: "—", r: "Aporte anual" }, { v: "—", r: "Total" }, { v: "—", r: "TIRM" }]);
+      kpis("k-simulador", [{ v: "—", r: "VPL sem aporte" }, { v: "—", r: "Aporte anual" }, { v: "—", r: "Total" }, { v: "—", r: "Aporte total ÷ custo" }]);
       document.getElementById("lado-simulador").innerHTML = `<p>${esc(e.nome)}</p><p class="nota laranja-t">${esc(r.erro)}</p>`;
       novoSvg("g-sim-vpl"); novoSvg("g-sim-entradas");
       return;
@@ -1006,11 +981,12 @@ table.t tr.sel td { background: var(--azul-lavado); }
     document.getElementById("titulo-simulador").textContent = precisa
       ? `O Estado precisaria aportar ${moeda(r.anual)} por ano, de ${e.ano0 + estado.inicio - 1} a ${e.ano0 + estado.fim - 1}, para zerar a VPL`
       : `Este empreendimento já tem VPL positiva: não precisa de contraprestação`;
+    const custoEmp = somaSerie(e.capexAno) + somaSerie(e.opexAno);
     kpis("k-simulador", [
       { v: moeda(r.vplOriginal), r: "VPL sem aporte", s: `a ${pct(estado.taxa)} a.a.`, cor: r.vplOriginal < 0 ? "laranja" : "" },
       { v: moeda(r.anual), r: "Aporte anual do Estado", s: `anos ${estado.inicio} a ${estado.fim} da concessão`, cor: "azul" },
       { v: moeda(r.total), r: "Total pago (nominal)", s: `em valor presente: ${moeda(r.vp)}` },
-      { v: `${pct(r.tirmOriginal)} → ${pct(r.tirmNova)}`, r: "TIRM antes → depois", s: `VPL com aporte: ${moeda(Math.abs(r.vplNovo) < 1 ? 0 : r.vplNovo)}` }
+      { v: custoEmp > 0 ? pct(r.total / custoEmp, 0) : "—", r: "Aporte total ÷ custo do empreendimento", s: `custo (CAPEX + OPEX): ${moeda(custoEmp)}` }
     ]);
     const receitaTotal = e.receita.reduce((a, b) => a + b, 0);
     document.getElementById("lado-simulador").innerHTML = `
@@ -1020,8 +996,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
         <p>Custo total ${e.distribuido ? `em ${e.anos_custo} anos` : `no ano 1 (${e.ano0})`}: <span class="forte num">${moeda(e.custo)}</span> <span class="nota">CAPEX ${moeda(e.capex)} · OPEX ${moeda(e.opex)}</span></p>
         <p>Receita em ${n} anos: <span class="forte num">${moeda(receitaTotal)}</span> (${NOME_MOEDA()})</p></div>
       <div class="bloco"><h3>Leitura</h3>${precisa
-        ? `<p>Trazidos a hoje, faltam <span class="forte laranja-t num">${moeda(-r.vplOriginal)}</span>. O Estado paga <span class="forte azul-t num">${moeda(r.anual)}</span> por ano durante ${estado.fim - estado.inicio + 1} anos (${moeda(r.total)} no total), que valem exatamente isso hoje.</p>
-           <p class="nota">Aporte total = ${pct(r.total / e.custo, 0)} do custo do empreendimento.</p>`
+        ? `<p>Trazidos a hoje, faltam <span class="forte laranja-t num">${moeda(-r.vplOriginal)}</span>. O Estado paga <span class="forte azul-t num">${moeda(r.anual)}</span> por ano durante ${estado.fim - estado.inicio + 1} anos (${moeda(r.total)} no total), que valem exatamente isso hoje.</p>`
         : `<p>A VPL já é positiva (${moeda(r.vplOriginal)}) a ${pct(estado.taxa)} a.a.</p>`}</div>`;
 
     // VPL acumulada
@@ -1076,20 +1051,20 @@ table.t tr.sel td { background: var(--azul-lavado); }
   }
 
   // ---------------------------------------------------------------- 04 · impacto no PIB
-  // Linhas de dados_brutos/impacto_pib: id_empreendimento, nome_empreendimento, ano, municipio,
-  // pib_municipio, crescimento_economico, pib_total. A confirmar o significado das colunas:
-  // por ora o impacto do empreendimento no município é pib_total − pib_municipio.
+  // Linhas de dados_brutos/impacto_pib (uma por empreendimento, ano e município): o impacto do
+  // empreendimento é crescimento_economico, o acréscimo ao PIB do município (pib_total − pib_municipio).
+  // O HTML recebe só id_empreendimento, ano, municipio, pib_municipio e crescimento_economico.
   const PIB = DADOS.pib || [];
   const COLUNAS_PIB = ["id_empreendimento", "nome_empreendimento", "ano", "municipio", "pib_municipio", "crescimento_economico", "pib_total"];
-  const impactoPib = l => l.pib_total - l.pib_municipio;
+  const impactoPib = l => l.crescimento_economico;
   const PIB_ANO_MIN = PIB.length ? Math.min(...PIB.map(l => l.ano)) : null;
   const PIB_ANO_MAX = PIB.length ? Math.max(...PIB.map(l => l.ano)) : null;
   function prepararPib() {
     const f = estado.pib;
     f.anoIni = PIB_ANO_MIN; f.anoFim = PIB_ANO_MAX;
-    const ids = [...new Set(PIB.map(l => l.id_empreendimento))];
+    const ids = [...new Set(PIB.map(l => l.id_empreendimento))].filter(id => POR_ID.has(id));
     document.getElementById("pib-emp").innerHTML = `<option value="0">Todos</option>` + ids
-      .map(id => ({ id, nome: (POR_ID.get(id) || {}).nome || PIB.find(l => l.id_empreendimento === id).nome_empreendimento }))
+      .map(id => ({ id, nome: POR_ID.get(id).nome }))
       .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
       .map(e => `<option value="${e.id}">${esc(`${e.id} · ${e.nome}`)}</option>`).join("");
     document.getElementById("pib-mun").innerHTML = opcoes([...new Set(PIB.map(l => l.municipio))].sort((a, b) => a.localeCompare(b, "pt-BR")), "Todos");
@@ -1108,10 +1083,10 @@ table.t tr.sel td { background: var(--azul-lavado); }
   function desenharPibVazio() {
     document.getElementById("titulo-pib").textContent = "Estrutura pronta para medir quanto a carteira acrescenta ao PIB dos municípios";
     kpis("k-pib", [
-      { v: "—", r: "Impacto acumulado no PIB", s: "soma do impacto em todos os anos" },
-      { v: "—", r: "Municípios impactados", s: "com impacto positivo no período" },
-      { v: "—", r: "Crescimento do PIB dos municípios", s: "impacto ÷ PIB dos municípios" },
-      { v: "—", r: "PIB gerado por R$ investido", s: "impacto ÷ investimento (CAPEX + OPEX)" }
+      { v: "—", r: "Crescimento do PIB pelos empreendimentos", s: "soma de crescimento_economico" },
+      { v: "—", r: "Investimento total (CAPEX + OPEX)", s: "dos mesmos empreendimentos" },
+      { v: "—", r: "Crescimento do PIB dos municípios", s: "crescimento ÷ PIB dos municípios" },
+      { v: "—", r: "Contraprestação do Estado", s: "aporte anual dos mesmos empreendimentos" }
     ]);
     document.getElementById("cab-pib").textContent = "aguardando dados";
     document.getElementById("g-pib").innerHTML = `<div class="vazio"><b>Aguardando a tabela de impacto no PIB</b>
@@ -1119,11 +1094,11 @@ table.t tr.sel td { background: var(--azul-lavado); }
       <div class="colunas">${COLUNAS_PIB.map(c => `<code>${c}</code>`).join("")}</div></div>`;
     document.getElementById("lado-pib").innerHTML = `
       <div class="bloco"><h3>O que esta aba vai mostrar</h3>
-        <p>Impacto no PIB ano a ano, comparado ao investimento da carteira, e os municípios e empreendimentos com maior efeito.</p></div>
+        <p>PIB total dos municípios ano a ano, quanto dele vem dos empreendimentos e os municípios e empreendimentos com maior efeito.</p></div>
       <div class="bloco"><h3>Indicadores</h3>
-        <p class="nota"><b>Impacto</b>: PIB com o empreendimento − PIB do município sem ele (pib_total − pib_municipio).<br>
+        <p class="nota"><b>Impacto</b>: acréscimo ao PIB do município (crescimento_economico = pib_total − pib_municipio).<br>
         <b>Crescimento</b>: impacto ÷ PIB dos municípios impactados no período.<br>
-        <b>PIB por R$ investido</b>: impacto acumulado ÷ CAPEX + OPEX dos mesmos empreendimentos.</p></div>
+        <b>Contraprestação</b>: aporte anual do Estado que zera a VPL dos mesmos empreendimentos.</p></div>
       <p class="nota">Filtros: empreendimento, município e período.</p>`;
   }
   function desenharPib() {
@@ -1148,28 +1123,29 @@ table.t tr.sel td { background: var(--azul-lavado); }
     const municipios = [...porMun.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
     const empsComImpacto = [...porEmp.entries()].sort((a, b) => b[1] - a[1]);
 
-    // investimento dos mesmos empreendimentos, nos mesmos anos
+    // PIB total por ano: PIB de cada município uma vez (base) + crescimento de todos os empreendimentos
     const anos = [];
-    for (let a = f.anoIni; a <= f.anoFim; a++) anos.push({ ano: a, impacto: 0, investimento: 0 });
+    for (let a = f.anoIni; a <= f.anoFim; a++) anos.push({ ano: a, base: 0, impacto: 0 });
+    base.forEach((v, chave) => { anos[+chave.split("|")[1] - f.anoIni].base += v; });
     linhas.forEach(l => { anos[l.ano - f.anoIni].impacto += impactoPib(l); });
-    porEmp.forEach((_, id) => {
-      const e = POR_ID.get(id);
-      if (!e) return;
-      e.fluxo.forEach((_, t) => { const a = e.ano0 + t; if (a >= f.anoIni && a <= f.anoFim) anos[a - f.anoIni].investimento += e.capexAno[t] + e.opexAno[t]; });
-    });
-    const investimento = somar(anos, a => a.investimento);
+    anos.forEach(a => { a.total = a.base + a.impacto; });
+    // investimento (CAPEX + OPEX de toda a concessão) e contraprestação dos mesmos empreendimentos
+    const empsPib = [...porEmp.keys()].map(id => POR_ID.get(id)).filter(Boolean);
+    const investimento = somar(empsPib, e => somaSerie(e.capexAno) + somaSerie(e.opexAno));
+    const aportes = empsPib.map(e => calcular(e)).filter(r => !r.erro && r.vplOriginal < 0);
+    const anual = somar(aportes, r => r.anual), totalAporte = somar(aportes, r => r.total);
     const periodo = f.anoIni === f.anoFim ? `em ${f.anoIni}` : `entre ${f.anoIni} e ${f.anoFim}`;
 
     document.getElementById("titulo-pib").textContent = linhas.length
       ? `${f.emp ? "O empreendimento" : "A carteira"} acrescenta ${moeda(impacto)} ao PIB de ${municipios.length} ${municipios.length === 1 ? "município" : "municípios"} ${periodo}`
       : "Nenhum dado de PIB com os filtros escolhidos";
     kpis("k-pib", [
-      { v: moeda(impacto), r: "Impacto acumulado no PIB", s: `${porEmp.size} empreendimentos · ${periodo}`, cor: "azul" },
-      { v: String(municipios.length), r: "Municípios impactados", s: municipios.length ? `maior: ${esc(municipios[0][0])}` : "" },
+      { v: moeda(impacto), r: "Crescimento do PIB pelos empreendimentos", s: `${porEmp.size} empreendimentos`, cor: "azul" },
+      { v: moeda(investimento), r: "Investimento total (CAPEX + OPEX)", s: "toda a concessão dos mesmos empreendimentos" },
       { v: pibBase > 0 ? pct(impacto / pibBase) : "—", r: "Crescimento do PIB dos municípios", s: `sobre ${moeda(pibBase)} de PIB no período` },
-      { v: investimento > 0 ? `R$ ${nf(2).format(impacto / investimento)}` : "—", r: "PIB gerado por R$ 1 investido", s: `investimento de ${moeda(investimento)} (${NOME_MOEDA()})` }
+      { v: `${moeda(anual)}/ano`, r: "Contraprestação do Estado", s: `anos ${estado.inicio}–${estado.fim} · total ${moeda(totalAporte)}`, cor: "azul" }
     ]);
-    document.getElementById("cab-pib").textContent = `${periodo} · valores nominais por ano`;
+    document.getElementById("cab-pib").textContent = `${periodo} · R$ por ano`;
     document.getElementById("lado-pib").innerHTML = `
       <div class="bloco"><h3>Municípios com maior impacto</h3>
         ${distribuicao(municipios.slice(0, 6).map(([nome, v]) => ({ nome: esc(nome), valor: v, rotulo: moeda(v) })))}</div>
@@ -1178,7 +1154,7 @@ table.t tr.sel td { background: var(--azul-lavado); }
 
     const { svg, W, H } = novoSvg("g-pib");
     const m = { t: 16, d: 20, b: 34, e: 84 };
-    const tk = ticks(Math.min(0, ...anos.map(a => a.impacto)), Math.max(1, ...anos.map(a => Math.max(a.impacto, a.investimento))), 4);
+    const tk = ticks(0, Math.max(1, ...anos.map(a => a.total)), 4);
     const y = escalaLinear(tk[0], tk[tk.length - 1], H - m.b, m.t);
     tk.forEach(v => {
       el("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--eixo)" : "var(--grade)" }, svg);
@@ -1190,11 +1166,10 @@ table.t tr.sel td { background: var(--azul-lavado); }
     anos.forEach((a, k) => {
       const g = el("g", null, svg);
       el("rect", { x: m.e + k * banda, y: m.t, width: banda, height: H - m.t - m.b, fill: "transparent" }, g);
-      el("rect", { class: "marca", x: m.e + k * banda + banda * 0.15, y: Math.min(y(a.impacto), y(0)), width: banda * 0.7, height: Math.abs(y(0) - y(a.impacto)), fill: "var(--azul)", rx: 2 }, g);
+      el("rect", { class: "marca", x: m.e + k * banda + banda * 0.15, y: y(a.total), width: banda * 0.7, height: Math.max(0, y(0) - y(a.total)), fill: "var(--azul)", rx: 2 }, g);
       if (a.ano % passoRotulo === 0 || anos.length === 1) texto(svg, cx(k), H - m.b + 24, String(a.ano), "gm", { "text-anchor": "middle" });
-      marcar(g, () => `<span class="m">${a.ano}</span><span>Impacto no PIB: <b class="azul-t">${moeda(a.impacto)}</b></span><span>Investimento: <b>${moeda(a.investimento)}</b></span>`);
+      marcar(g, () => `<span class="m">${a.ano}</span><span>PIB total: <b class="azul-t">${moeda(a.total)}</b></span><span>PIB sem os empreendimentos: <b>${moeda(a.base)}</b></span><span>Crescimento pelos empreendimentos: <b>${moeda(a.impacto)}</b></span>`);
     });
-    el("path", { d: anos.map((a, k) => `${k ? "L" : "M"}${cx(k)},${y(a.investimento)}`).join(""), fill: "none", stroke: "var(--tinta)", "stroke-width": 2, "pointer-events": "none" }, svg);
   }
 
   // ---------------------------------------------------------------- 05 · ranking
@@ -1215,11 +1190,8 @@ table.t tr.sel td { background: var(--azul-lavado); }
     seg.innerHTML = setores.map(s => `<button type="button" data-setor="${esc(s)}" aria-pressed="${s === f.setor}">${esc(s)}</button>`).join("");
     seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { f.setor = b.dataset.setor; desenharRanking(); }));
 
-    const selInt = document.getElementById("rk-intervencao");
-    if (!selInt.options.length) {
-      const ints = [...new Set(EMPS.map(e => e.intervencao).filter(Boolean))].sort();
-      selInt.innerHTML = `<option value="">Todas</option>` + ints.map(i => `<option>${esc(i)}</option>`).join("");
-      selInt.addEventListener("change", () => { f.intervencao = selInt.value; desenharRanking(); });
+    if (!f.ligado) {
+      f.ligado = true;
       document.getElementById("rk-teto").addEventListener("input", ev => { const v = parseFloat(ev.target.value); f.teto = isFinite(v) ? v * 1e6 : null; desenharRanking(); });
       document.getElementById("rk-busca").addEventListener("input", ev => { f.busca = ev.target.value.trim().toLowerCase(); desenharRanking(); });
     }
@@ -1227,7 +1199,6 @@ table.t tr.sel td { background: var(--azul-lavado); }
     const todos = carteira().filter(r => !r.erro && r.vplOriginal < 0);
     const filtrados = todos.filter(r =>
       (f.setor === "Todos" || r.emp.setor === f.setor) &&
-      (!f.intervencao || r.emp.intervencao === f.intervencao) &&
       (f.teto == null || r.anual <= f.teto) &&
       (!f.busca || r.emp.nome.toLowerCase().includes(f.busca) || String(r.emp.id) === f.busca));
     const col = COLUNAS.find(c => c.id === estado.ordem.col) || COLUNAS[4];
@@ -1271,9 +1242,6 @@ table.t tr.sel td { background: var(--azul-lavado); }
     DESENHOS.forEach(d => d());
   }
 
-  document.querySelectorAll("#seg-moeda button").forEach(b => b.addEventListener("click", () => { estado.moeda = b.dataset.moeda; atualizar(); }));
-  document.getElementById("c-taxa").addEventListener("input", ev => { estado.taxa = parseFloat(ev.target.value); atualizar(); });
-  document.getElementById("c-taxa-padrao").addEventListener("click", () => { estado.taxa = ESTADO_PADRAO_TAXA; atualizar(); });
 
   // ---------------------------------------------------------------- abas, escala e navegação
   const slides = [...document.querySelectorAll(".slide")];

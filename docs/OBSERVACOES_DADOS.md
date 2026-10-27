@@ -106,4 +106,10 @@ Abas: visão geral, alocação temporal, simulador, impacto no PIB e ranking (a 
   sem custo distribuído, tem o custo do ano 1 dividido na proporção da tabela `capex_opex`.
 - **Impacto no PIB**: lê `dados_brutos/impacto_pib` (.parquet ou .csv com `,` ou `;`), colunas `id_empreendimento`,
   `nome_empreendimento`, `ano`, `municipio`, `pib_municipio`, `crescimento_economico`, `pib_total`. Sem o arquivo, a aba
-  mostra a estrutura aguardando dados. **A confirmar**: o impacto está sendo lido como `pib_total − pib_municipio`.
+  mostra a estrutura aguardando dados. O impacto é `crescimento_economico` (= `pib_total − pib_municipio`); vazio
+  conta como zero. O arquivo atual vem da view `cenario_recomendado_2_vw_crescimento_economico_investminas`
+  (88 empreendimentos, 2025–2055): 77 dos 84 empreendimentos do painel têm estimativa; ficam sem ela
+  867, 895, 898, 899, 907, 954 e 962. Os demais da view estão fora da carteira filtrada.
+- A aba de PIB mostra o PIB total por ano (PIB de cada município uma vez + crescimento de todos os empreendimentos)
+  e, nos cards, o crescimento, o CAPEX + OPEX e a contraprestação dos mesmos empreendimentos.
+- No painel v2 a taxa de desconto é fixa (11,02% a.a.) e não há o modo com inflação; o painel atual mantém os dois.

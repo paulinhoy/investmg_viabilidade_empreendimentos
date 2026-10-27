@@ -20,6 +20,8 @@ MARCADOR = "__DADOS_JSON__"
 # Impacto no PIB (aba 04 da proposta 2): opcional, em dados_brutos/impacto_pib.parquet ou .csv
 ARQUIVO_PIB = "impacto_pib"
 COLUNAS_PIB = ['id_empreendimento', 'nome_empreendimento', 'ano', 'municipio', 'pib_municipio', 'crescimento_economico', 'pib_total']
+# vão para o HTML: o nome vem do cadastro e pib_total = pib_municipio + crescimento_economico
+COLUNAS_PIB_PAINEL = ['id_empreendimento', 'ano', 'municipio', 'pib_municipio', 'crescimento_economico']
 
 # ==========================================
 # 2. FUNÇÕES
@@ -36,9 +38,11 @@ def carregar_impacto_pib(ids):
         return []
     df_pib = df_pib[COLUNAS_PIB].dropna(subset=['id_empreendimento', 'ano', 'municipio'])
     df_pib = df_pib[df_pib['id_empreendimento'].isin(ids)]
-    df_pib = df_pib.astype({'id_empreendimento': int, 'ano': int, 'municipio': str, 'nome_empreendimento': str})
-    for coluna in ['pib_municipio', 'crescimento_economico', 'pib_total']:
-        df_pib[coluna] = df_pib[coluna].astype(float).round(2)
+    df_pib = df_pib[COLUNAS_PIB_PAINEL].astype({'id_empreendimento': int, 'ano': int, 'municipio': str})
+    # crescimento_economico é o acréscimo ao PIB do município (R$); vazio = sem impacto estimado
+    df_pib['crescimento_economico'] = df_pib['crescimento_economico'].fillna(0.0)
+    for coluna in ['pib_municipio', 'crescimento_economico']:
+        df_pib[coluna] = df_pib[coluna].astype(float).round(0)
     return df_pib.to_dict('records')
 
 def montar_dados():
