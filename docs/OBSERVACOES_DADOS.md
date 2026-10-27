@@ -98,3 +98,12 @@ os demais continuam com o custo inteiro no primeiro ano (coluna `custo_distribui
 - **CAPEX e OPEX parecem invertidos na tabela `capex_opex`**: no emp. 36 o arquivo tem CAPEX R$ 238,3 mi e OPEX R$ 43,9 mi;
   a `capex_opex` tem o contrário. A soma (custo total) é a mesma. O painel usa os valores do arquivo. **A confirmar.**
 - A query que gerou o arquivo ainda não está em `extracao/queries.py`.
+
+## 11. Painel proposta 2 (`apresentacao/painel_v2_template.html`)
+
+Abas: visão geral, alocação temporal, simulador, impacto no PIB e ranking (a aba "Momento do aporte" saiu).
+- A alocação temporal usa o CAPEX e o OPEX de cada ano (`custo_capex` e `custo_opex` no `fluxo_caixa`). O emp. 797,
+  sem custo distribuído, tem o custo do ano 1 dividido na proporção da tabela `capex_opex`.
+- **Impacto no PIB**: lê `dados_brutos/impacto_pib` (.parquet ou .csv com `,` ou `;`), colunas `id_empreendimento`,
+  `nome_empreendimento`, `ano`, `municipio`, `pib_municipio`, `crescimento_economico`, `pib_total`. Sem o arquivo, a aba
+  mostra a estrutura aguardando dados. **A confirmar**: o impacto está sendo lido como `pib_total − pib_municipio`.

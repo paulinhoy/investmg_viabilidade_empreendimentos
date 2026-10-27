@@ -12,8 +12,8 @@ extracao/            roda no servidor com acesso ao banco (leve a pasta inteira)
   config.exemplo.py    modelo de config.py (host, banco, caminho da planilha) — config.py não é versionado
 tirm_peltmg.py       Fluxo 1: fluxo de caixa, VPL e TIRM -> saida/fluxo_caixa, saida/resultados
 contraprestacao.py   Fluxo 2: contraprestação por intervalo de anos -> saida/contraprestacao_<a>-<b>[_inflacao]
-gerar_apresentacao.py  gera apresentacao/painel_contraprestacao.html a partir do template
-apresentacao/        painel_template.html (o HTML gerado, com dados, não é versionado)
+gerar_apresentacao.py  gera apresentacao/painel_contraprestacao.html e painel_v2.html a partir dos templates
+apresentacao/        painel_template.html e painel_v2_template.html (proposta 2); os HTML gerados, com dados, não são versionados
 docs/                OBSERVACOES_DADOS.md: problemas e premissas encontrados nos dados
 pesquisa/            pesquisa sobre estudos de viabilidade de concessões rodoviárias
 ```
@@ -34,7 +34,8 @@ Pastas locais, fora do Git: `dados_brutos/` (extração), `saida/` (resultados),
 ## Premissas principais
 
 - Taxa de desconto e de financiamento 11,02% a.a.; reinvestimento 15% a.a. (TIRM).
-- Ano 1 da concessão = primeiro ano do fluxo (t = 0); custo (CAPEX + OPEX) abatido inteiro no ano 1.
+- Ano 1 da concessão = primeiro ano do fluxo (t = 0); custo (CAPEX + OPEX) distribuído ao longo da concessão
+  (`dados_brutos/custo_distribuido.csv`); quem não está no arquivo tem o custo inteiro no ano 1.
 - Aporte do Estado constante em valor nominal nos anos escolhidos.
 - Dois resultados: receitas em moeda constante (como vêm do banco) e corrigidas por `INFLACAO_ANUAL` (3% a.a.).
 - Contraprestação e painel: só esfera estadual e status 1 a 5 (Concepção a Em contratação).

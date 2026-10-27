@@ -55,17 +55,18 @@ def distribuir_custo(df_final, df_custo_distribuido):
     A série continua com os anos da receita: custo de anos antes do início da receita vai para o
     primeiro ano dela, e custo depois do fim vai para o último (erro na construção do arquivo)."""
     chaves = ['id_empreendimento', 'id_cenario']
-    df_dist = df_custo_distribuido.rename(columns={'ano': 'ano_corrente', 'valor': 'custo'})
-    df_dist = df_dist[['id_empreendimento', 'ano_corrente', 'custo']].assign(id_cenario=ID_CENARIO_CUSTO_DISTRIBUIDO)
+    df_dist = df_custo_distribuido.rename(columns={'ano': 'ano_corrente', 'valor': 'custo', 'valor_capex': 'custo_capex', 'valor_opex': 'custo_opex'})
+    colunas_custo = ['custo', 'custo_capex', 'custo_opex']
+    df_dist = df_dist[['id_empreendimento', 'ano_corrente'] + colunas_custo].assign(id_cenario=ID_CENARIO_CUSTO_DISTRIBUIDO)
 
     limites = df_final.groupby(chaves)['ano_corrente'].agg(primeiro_ano='min', ultimo_ano='max').reset_index()
     df_dist = df_dist.merge(limites, on=chaves)
     df_dist['ano_corrente'] = df_dist['ano_corrente'].clip(df_dist['primeiro_ano'], df_dist['ultimo_ano'])
-    df_dist = df_dist.groupby(chaves + ['ano_corrente'], as_index=False)['custo'].sum()
+    df_dist = df_dist.groupby(chaves + ['ano_corrente'], as_index=False)[colunas_custo].sum()
 
     tem_dist = df_final.set_index(chaves).index.isin(df_dist.set_index(chaves).index)
-    df_parte = df_final[tem_dist].drop(columns='custo').merge(df_dist, on=chaves + ['ano_corrente'], how='left')
-    df_parte['custo'] = df_parte['custo'].fillna(0.0)
+    df_parte = df_final[tem_dist].drop(columns=colunas_custo).merge(df_dist, on=chaves + ['ano_corrente'], how='left')
+    df_parte[colunas_custo] = df_parte[colunas_custo].fillna(0.0)
     df_parte['custo_distribuido'] = True
 
     return pd.concat([df_final[~tem_dist], df_parte], ignore_index=True)
@@ -74,12 +75,15 @@ def preparar_fluxo_caixa(df_receita, df_custo, df_custo_distribuido=None):
     """Monta o fluxo de caixa anual (receita - custo).
     O custo é distribuído ao longo dos anos quando há df_custo_distribuido para o empreendimento;
     caso contrário, é abatido inteiro no primeiro ano.
-    Mantém o custo de cada ano (coluna 'custo'), o período 't' (0 = primeiro ano) e 'custo_distribuido'."""
+    Mantém o custo de cada ano (coluna 'custo', com 'custo_capex' e 'custo_opex' quando distribuído), o período 't' (0 = primeiro ano) e 'custo_distribuido'."""
     chaves = ['id_empreendimento', 'id_cenario']
     df_final = pd.merge(df_receita, df_custo, on=chaves, how='left')
     primeiro_ano = df_final.groupby(chaves)['ano_corrente'].transform('min')
 
     df_final['custo'] = np.where(df_final['ano_corrente'] == primeiro_ano, df_final['custo_final'], 0.0)
+    # sem distribuição, a divisão do custo do ano 1 entre CAPEX e OPEX não vem no fluxo
+    df_final['custo_capex'] = np.nan
+    df_final['custo_opex'] = np.nan
     df_final['custo_distribuido'] = False
     if df_custo_distribuido is not None:
         df_final = distribuir_custo(df_final, df_custo_distribuido)
@@ -350,6 +354,6 @@ if __name__ == "__main__":
     print("\n✅ Processamento concluído com sucesso!")
 
     # 5. Exportar localmente
-    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'custo_distribuido', 'fluxo', 'fluxo_corrigido']
+    colunas_fluxo = ['id_empreendimento', 'id_cenario', 'modal', 'ano_corrente', 't', 'receita_ano', 'custo', 'custo_capex', 'custo_opex', 'custo_distribuido', 'fluxo', 'fluxo_corrigido']
     exportar_tabela(df_fluxo[colunas_fluxo], "fluxo_caixa")
     exportar_tabela(df_final, "resultados")
